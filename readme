@@ -1,0 +1,7 @@
+Tu takie podstawowe rzeczy będę zapisywać póki co 
+
+userConfig.txt - w odpowiedniej kolejności: nazwa użytkownika, hasło (id do rozróżnienia 
+    użytkownika to jego PID, nadawany za pomocą serwera)
+chatInfo.h - definicje używane w całym programie, structy wiadomości 
+client.c - póki co wszystko odnośnie do klienta
+server.c - wszystko co odnoścnie do serwera
