@@ -21,15 +21,22 @@ int main(){
 
     fflush(stdout);
     
-    receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
-    if(receiveStatus > 0){
-        switch(receive.type){
-            case LOGIN_MESSAGE_TYPE:
-                loginUser(receive, msgId);
-                break;
+    while(TRUE){
+        fflush(stdout);
+        receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
+        if(receiveStatus > 0){
+            switch(receive.type){
+                case LOGIN_MESSAGE_TYPE:
+                    loginUser(receive, msgId);
+                    break;
+            }
         }
     }
+
 }
+
+
+// return:
 // 0 if username incorrect
 // -1 if password incorrect
 // 1 if correct
@@ -39,7 +46,6 @@ int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZ
     int maxNum = USERNAME_SIZE + PASSWORD_SIZE + 1;
     //compare username
     for (int i = 0; i < maxNum; i++ ){
-        printf("%c   %c\n", message.message[i],str[i]);
         if(message.message[i] == ';' && str[i] == ';'){
             tmp = i;
             break;
@@ -52,7 +58,6 @@ int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZ
     if(tmp == -1) return 0;
     //compare password
     for (int j = tmp; j<maxNum; j++){
-        printf("D");
         if(message.message[j] == '\0' && str[j] == '\0'){
             return 1;
         }
@@ -63,6 +68,7 @@ int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZ
     }
     return -2;
 }
+
 void loginUser(struct msgbuf receive, int msgId){
     int flag = -1;
     int validation=-2;
@@ -79,10 +85,18 @@ void loginUser(struct msgbuf receive, int msgId){
 
         validation = namePasswordCmp(receive, tempStr);
         if (validation == 1){
-            flag = i;
-            users[i].id = receive.senderId;
-            users[i].isLogin = TRUE;
-            break;
+            // if user already logged in
+            if(users[i].isLogin){
+                validation = -3;
+                break;
+            }
+            else{
+                flag = i;
+                users[i].id = receive.senderId;
+                users[i].isLogin = TRUE;
+                break;
+            }
+
         }
         else if (validation == -1) break;
     }
@@ -92,30 +106,40 @@ void loginUser(struct msgbuf receive, int msgId){
         if(validation == 0){
             send.error = LOGIN_ERROR_USERNAME_TYPE;
             strcpy(send.message, LOGIN_ERROR_MESSAGE);
-            printf("%s", LOGIN_ERROR_MESSAGE);
+            printf("%s\n", LOGIN_ERROR_MESSAGE);
         }
         // password is incorrect
-        else {
+        else if (validation == -1) {
             send.error = LOGIN_ERROR_PASSWORD_TYPE;
             strcpy(send.message, LOGIN_ERROR_MESSAGE2);
-            printf("%s", LOGIN_ERROR_MESSAGE2);
+            printf("%s\n", LOGIN_ERROR_MESSAGE2);
         }
-        send.type = receive.senderId;
-        msgsnd(msgId, &send,MESSAGE_SIZE,0);
+        // user already logged in
+        else{
+            send.error = LOGIN_ERROR_USER_LOGGED_TYPE;
+            strcpy(send.message, LOGIN_ERROR_MESSAGE3);
+            printf("%s\n", LOGIN_ERROR_MESSAGE3);
+        }
     }
-
+    // user logged in
+    else{
+        send.error = LOGIN_CONFIRMATION_TYPE;
+        strcpy(send.message, LOGIN_CONFIRMATION_MESSAGE);
+        printf("%s (%s)\n", LOGIN_CONFIRMATION_MESSAGE, users[flag].name);
+    }
+    // send information
+    send.type = receive.senderId;
+    msgsnd(msgId, &send,MESSAGE_SIZE,0);
 }
 
 
 int loadUsersData(){
-    printf("1");
     FILE *file = fopen("userConfig.txt", "r");
     if (file == NULL)
     {
         perror("Can't open userConfig.txt");
         return 1;
     }
-    printf("2");
 
     for (int i = 0; i < NUM_OF_USERS; i++) {
         fscanf(file, "%s", users[i].name);

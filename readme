@@ -4,4 +4,7 @@ userConfig.txt - w odpowiedniej kolejności: nazwa użytkownika, hasło (id do r
     użytkownika to jego PID, nadawany za pomocą serwera)
 chatInfo.h - definicje używane w całym programie, structy wiadomości 
 client.c - póki co wszystko odnośnie do klienta
+client.h - funkcje do klienta
 server.c - wszystko co odnoścnie do serwera
+server.h - funkcje do servera
+
