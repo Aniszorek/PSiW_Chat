@@ -15,20 +15,24 @@
 #define MESSAGE_SIZE 1024
 #define USERNAME_SIZE 16
 #define PASSWORD_SIZE 16
-#define KEY 2106
+#define KEY 2107
 
 #define NUM_OF_USERS 9
 
-#define LOGIN_MESSAGE_TYPE 1
+#define SIGKILL 9
+
+#define LOGIN_TYPE 1
 #define LOGIN_ERROR_PASSWORD_TYPE 2
 #define LOGIN_ERROR_USERNAME_TYPE 3
 #define LOGIN_ERROR_USER_LOGGED_TYPE 4
 #define LOGIN_CONFIRMATION_TYPE 5
+#define LOGOUT_TYPE 6
 
 #define LOGIN_ERROR_MESSAGE "Username does not exist\n"
 #define LOGIN_ERROR_MESSAGE2 "Incorrect password\n"
 #define LOGIN_ERROR_MESSAGE3 "User already logged in\n"
-#define LOGIN_CONFIRMATION_MESSAGE "User logged in. Welcome!"
+#define LOGIN_CONFIRMATION_MESSAGE "User logged in. Welcome!\n"
+#define LOGOUT_CONFIRMATION_MESSAGE "User logged out.\n"
 
 struct msgbuf{
 		long type;

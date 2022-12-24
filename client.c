@@ -5,13 +5,22 @@ struct msgbuf send, receive;
 
 int main(int argc, char* argv[]){
     fflush(stdout);
-    logIn();
+    int msgId = msgget(KEY, 0600 | IPC_CREAT);
+
+    if(msgId < 0 ){
+        perror("Error getting msgID\n");
+        exit(1);
+    }
+
+    communicationLoop(msgId);
+    
+    
 }
 
 
 // function to log in user 
-void logIn(){
-    int msgId = msgget(KEY, 0600 | IPC_CREAT);
+int logIn(int msgId){
+    
     char username[USERNAME_SIZE]; 
     char password[PASSWORD_SIZE];
     int pid = getpid();
@@ -25,11 +34,10 @@ void logIn(){
 
         // sending username and password
         fflush(stdout);
-        send.type = LOGIN_MESSAGE_TYPE;
+        send.type = LOGIN_TYPE;
         send.senderId = pid;
 
-        strcpy(send.message, "");
-        strcat(send.message, username);
+        strcpy(send.message, username);
         strcat(send.message, ";");
         strcat(send.message, password);
         
@@ -58,8 +66,47 @@ void logIn(){
         }
         else if (receive.error == LOGIN_CONFIRMATION_TYPE){
             printf(LOGIN_CONFIRMATION_MESSAGE);
-            break;
+            return 0;
         }
     }
+    return 1;
 
+}
+
+void communicationLoop(int msgId){
+    if(logIn(msgId)==0){
+        int flag = 0;
+        
+        int childPid = fork();
+        // process to doing things
+        if(childPid > 0){
+            printf("Ready to chat.\n");
+            while(TRUE){
+                char userInput[MESSAGE_SIZE] = "";
+                
+
+                scanf(" %s", userInput);
+                printf("%s", userInput);
+
+                if(strcmp(userInput, "!logout")==0){
+                    flag = 1;
+                    logOut(msgId,childPid);
+                }
+            }
+        }
+        else{
+            //pass
+        }
+    }
+}   
+void logOut(int msgId, int childPid){
+    int id = getpid();
+    send.type = LOGOUT_TYPE;
+    send.senderId = id;
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+    msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
+
+    printf("%s",receive.message);
+    kill(childPid, SIGKILL);
+    exit(0);
 }

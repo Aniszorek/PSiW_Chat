@@ -26,8 +26,11 @@ int main(){
         receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
         if(receiveStatus > 0){
             switch(receive.type){
-                case LOGIN_MESSAGE_TYPE:
-                    loginUser(receive, msgId);
+                case LOGIN_TYPE:
+                    logInUser(msgId, receive);
+                    break;
+                case LOGOUT_TYPE:
+                    logOutUser(msgId, receive);
                     break;
             }
         }
@@ -69,7 +72,7 @@ int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZ
     return -2;
 }
 
-void loginUser(struct msgbuf receive, int msgId){
+void logInUser(int msgId, struct msgbuf receive){
     int flag = -1;
     int validation=-2;
     
@@ -132,7 +135,6 @@ void loginUser(struct msgbuf receive, int msgId){
     msgsnd(msgId, &send,MESSAGE_SIZE,0);
 }
 
-
 int loadUsersData(){
     FILE *file = fopen("userConfig.txt", "r");
     if (file == NULL)
@@ -150,6 +152,29 @@ int loadUsersData(){
     }
     fclose(file);
     return 0;
+}
+
+void logOutUser(int msgId,struct msgbuf receive){
+    int flag = -1;
+    for (int i = 0; i< NUM_OF_USERS; i++){
+        if (users[i].id == receive.senderId){
+            send.type = users[i].id;
+            users[i].id = 0;
+            users[i].isLogin = 0;
+            flag = i;
+            break;
+        }
+    }
+    if(flag==-1){
+        perror("User not found. Logout error");
+        exit(2);
+    }
+    else{
+        strcpy(send.message, LOGOUT_CONFIRMATION_MESSAGE);
+        printf("%s (%s)", LOGOUT_CONFIRMATION_MESSAGE, users[flag].name);
+        msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+    }
+    
 }
 
 

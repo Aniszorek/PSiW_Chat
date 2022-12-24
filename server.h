@@ -5,4 +5,5 @@
 int loadUsersData();
 int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZE + 1]);
 
-void loginUser(struct msgbuf receive, int msgId);
+void logInUser( int msgId, struct msgbuf receive);
+void logOutUser(int msgId,struct msgbuf receive);
