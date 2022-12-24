@@ -13,15 +13,15 @@ struct msgbuf send, receive;
 
 
 int main(){
+    fflush(stdout);
     long receiveStatus;
     int msgId = msgget(KEY, 0600 | IPC_CREAT);
-    printf("a");
-    int a = loadUsersData();
-    printf("a");
-    printf("b");
+
+    loadUsersData();
+
     fflush(stdout);
+    
     receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
-    printf("c");
     if(receiveStatus > 0){
         switch(receive.type){
             case LOGIN_MESSAGE_TYPE:
@@ -30,29 +30,79 @@ int main(){
         }
     }
 }
-
-
+// 0 if username incorrect
+// -1 if password incorrect
+// 1 if correct
+// -2 if error
+int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZE + 1]){
+    int tmp = -1;
+    int maxNum = USERNAME_SIZE + PASSWORD_SIZE + 1;
+    //compare username
+    for (int i = 0; i < maxNum; i++ ){
+        printf("%c   %c\n", message.message[i],str[i]);
+        if(message.message[i] == ';' && str[i] == ';'){
+            tmp = i;
+            break;
+        }
+        if (message.message[i] != str[i]){
+            return 0;
+        }
+    }
+    // if ; is not in [i] position then username is not correct
+    if(tmp == -1) return 0;
+    //compare password
+    for (int j = tmp; j<maxNum; j++){
+        printf("D");
+        if(message.message[j] == '\0' && str[j] == '\0'){
+            return 1;
+        }
+        if(message.message[j] != str[j]){
+            printf("-1");
+            return -1;
+        }
+    }
+    return -2;
+}
 void loginUser(struct msgbuf receive, int msgId){
     int flag = -1;
+    int validation=-2;
+    
 
     // check if user exist
     for (int i = 0; i< NUM_OF_USERS; i++){
-        if (strcmp(receive.message, users[i].name) == 0){
+        fflush(stdout);
+        char tempStr[USERNAME_SIZE + PASSWORD_SIZE + 1] = "";
+
+        strcat(tempStr, users[i].name);
+        strcat(tempStr, ";");
+        strcat(tempStr, users[i].password);
+
+        validation = namePasswordCmp(receive, tempStr);
+        if (validation == 1){
             flag = i;
             users[i].id = receive.senderId;
             users[i].isLogin = TRUE;
             break;
         }
+        else if (validation == -1) break;
     }
-    // if username not exist
+
     if(flag == - 1){
-        send.error = LOGIN_ERROR_TYPE;
+        // username does not exist
+        if(validation == 0){
+            send.error = LOGIN_ERROR_USERNAME_TYPE;
+            strcpy(send.message, LOGIN_ERROR_MESSAGE);
+            printf("%s", LOGIN_ERROR_MESSAGE);
+        }
+        // password is incorrect
+        else {
+            send.error = LOGIN_ERROR_PASSWORD_TYPE;
+            strcpy(send.message, LOGIN_ERROR_MESSAGE2);
+            printf("%s", LOGIN_ERROR_MESSAGE2);
+        }
         send.type = receive.senderId;
-        strcpy(send.message, LOGIN_ERROR_MESSAGE);
         msgsnd(msgId, &send,MESSAGE_SIZE,0);
-        printf("%s", LOGIN_ERROR_MESSAGE2);
     }
-    // load password
 
 }
 

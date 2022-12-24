@@ -15,16 +15,16 @@
 #define MESSAGE_SIZE 1024
 #define USERNAME_SIZE 16
 #define PASSWORD_SIZE 16
-#define KEY 2102
+#define KEY 2104
 
 #define NUM_OF_USERS 9
 
 #define LOGIN_MESSAGE_TYPE 1
-#define LOGIN_PASSWORD_TYPE 2
-#define LOGIN_ERROR_TYPE 3
+#define LOGIN_ERROR_PASSWORD_TYPE 2
+#define LOGIN_ERROR_USERNAME_TYPE 3
 
-#define LOGIN_ERROR_MESSAGE "Username does not exist"
-#define LOGIN_ERROR_MESSAGE2 "Incorrect password"
+#define LOGIN_ERROR_MESSAGE "Username does not exist\n"
+#define LOGIN_ERROR_MESSAGE2 "Incorrect password\n"
 
 struct msgbuf{
 		long type;

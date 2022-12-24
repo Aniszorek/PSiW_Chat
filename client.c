@@ -4,6 +4,7 @@ struct msgbuf send, receive;
 
 
 int main(int argc, char* argv[]){
+    fflush(stdout);
     logIn();
 }
 
@@ -38,18 +39,18 @@ void logIn(){
         // sending username 
         send.type = LOGIN_MESSAGE_TYPE;
         send.senderId = pid;
-        strcpy(send.message, username);
+        strcat(send.message, username);
+        strcat(send.message, ";");
+        strcat(send.message, password);
         
-        messageSend(msgId, send,0);
-
-        // sending password
-        strcpy(send.message, password);
         messageSend(msgId, send,0);
 
         // check for error 
         messageReceive(msgId, receive, pid, 0);
-        if (receive.type == LOGIN_ERROR_MESSAGE2){
-            continue;
+        if(send.error == LOGIN_ERROR_USERNAME_TYPE)
+            printf(LOGIN_ERROR_MESSAGE);
+        if(send.error == LOGIN_ERROR_PASSWORD_TYPE){
+            printf(LOGIN_ERROR_MESSAGE2);
         }
     }
 
@@ -74,7 +75,7 @@ void test(){
     }
     else{
         while(1){
-            scanf("%s", &send.message);
+            scanf("%s", send.message);
             if (strcmp(send.message, "exit")==0){
                 msgsnd(msgId, &send, 1024, 0);
                 break;
