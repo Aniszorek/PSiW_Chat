@@ -1,11 +1,12 @@
 #include "client.h"
 
 struct msgbuf send, receive;
+int msgId;
 
 
 int main(int argc, char* argv[]){
     fflush(stdout);
-    int msgId = msgget(KEY, 0600 | IPC_CREAT);
+    msgId = msgget(KEY, 0600 | IPC_CREAT);
 
     if(msgId < 0 ){
         perror("Error getting msgID\n");
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]){
 
 
 // function to log in user 
-int logIn(int msgId){
+int logIn(){
     
     char username[USERNAME_SIZE]; 
     char password[PASSWORD_SIZE];
@@ -73,7 +74,7 @@ int logIn(int msgId){
 
 }
 
-void communicationLoop(int msgId){
+void communicationLoop(){
     if(logIn(msgId)==0){
         int childPid = fork();
 
@@ -84,10 +85,12 @@ void communicationLoop(int msgId){
                 char userInput[MESSAGE_SIZE] = "";
                 
                 scanf(" %s", userInput);
-                printf("%s\n", userInput);
+                //printf("%s\n", userInput);
 
                 if(strcmp(userInput, "!logout")==0)
-                    logOut(msgId,childPid);
+                    logOut(childPid);
+                if(strcmp(userInput, "!ulist")==0)
+                    requestUsersList();
             }
         }
         // process receiving message
@@ -96,16 +99,41 @@ void communicationLoop(int msgId){
         }
     }
 }   
-void logOut(int msgId, int childPid){
+void logOut(int childPid){
     int id = getpid();
 
     send.type = LOGOUT_TYPE;
     send.senderId = id;
-    
+
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
     msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
 
     printf("%s",receive.message);
     kill(childPid, SIGKILL);
     exit(0);
+}
+
+void requestUsersList(){
+    int id = getpid();
+    send.type = USERS_LIST_TYPE;
+    send.senderId = id;
+    
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+    msgrcv(msgId, &receive, MESSAGE_SIZE,id,0);
+
+    printUsersList();
+}
+
+void printUsersList(){
+    int i = 0;
+    char c;
+
+    printf("\nLogged in users: \n");
+    while((c = receive.message[i]) != '\0'){
+        if(c == ';')
+            printf("\n");
+        else
+            printf("%c", c);
+        i++;
+    }
 }
