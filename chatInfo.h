@@ -1,13 +1,15 @@
+#include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-#include <string.h>
-#include <ctype.h>
+#include <sys/wait.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -19,7 +21,6 @@
 
 #define NUM_OF_USERS 9
 
-#define SIGKILL 9
 
 #define LOGIN_TYPE 1
 #define LOGIN_ERROR_PASSWORD_TYPE 2

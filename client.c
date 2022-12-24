@@ -75,25 +75,22 @@ int logIn(int msgId){
 
 void communicationLoop(int msgId){
     if(logIn(msgId)==0){
-        int flag = 0;
-        
         int childPid = fork();
-        // process to doing things
+
+        // process doing commands from input
         if(childPid > 0){
             printf("Ready to chat.\n");
             while(TRUE){
                 char userInput[MESSAGE_SIZE] = "";
                 
-
                 scanf(" %s", userInput);
-                printf("%s", userInput);
+                printf("%s\n", userInput);
 
-                if(strcmp(userInput, "!logout")==0){
-                    flag = 1;
+                if(strcmp(userInput, "!logout")==0)
                     logOut(msgId,childPid);
-                }
             }
         }
+        // process receiving message
         else{
             //pass
         }
@@ -101,8 +98,10 @@ void communicationLoop(int msgId){
 }   
 void logOut(int msgId, int childPid){
     int id = getpid();
+
     send.type = LOGOUT_TYPE;
     send.senderId = id;
+    
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
     msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
 

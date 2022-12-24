@@ -14,28 +14,14 @@ struct msgbuf send, receive;
 
 int main(){
     fflush(stdout);
-    long receiveStatus;
     int msgId = msgget(KEY, 0600 | IPC_CREAT);
 
     loadUsersData();
 
     fflush(stdout);
-    
-    while(TRUE){
-        fflush(stdout);
-        receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
-        if(receiveStatus > 0){
-            switch(receive.type){
-                case LOGIN_TYPE:
-                    logInUser(msgId, receive);
-                    break;
-                case LOGOUT_TYPE:
-                    logOutUser(msgId, receive);
-                    break;
-            }
-        }
-    }
 
+    servCommunicationLoop(msgId);
+    
 }
 
 
@@ -65,7 +51,6 @@ int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZ
             return 1;
         }
         if(message.message[j] != str[j]){
-            printf("-1");
             return -1;
         }
     }
@@ -80,9 +65,9 @@ void logInUser(int msgId, struct msgbuf receive){
     // check if user exist
     for (int i = 0; i< NUM_OF_USERS; i++){
         fflush(stdout);
-        char tempStr[USERNAME_SIZE + PASSWORD_SIZE + 1] = "";
+        char tempStr[USERNAME_SIZE + PASSWORD_SIZE + 1];
 
-        strcat(tempStr, users[i].name);
+        strcpy(tempStr, users[i].name);
         strcat(tempStr, ";");
         strcat(tempStr, users[i].password);
 
@@ -135,14 +120,15 @@ void logInUser(int msgId, struct msgbuf receive){
     msgsnd(msgId, &send,MESSAGE_SIZE,0);
 }
 
-int loadUsersData(){
+void loadUsersData(){
     FILE *file = fopen("userConfig.txt", "r");
     if (file == NULL)
     {
         perror("Can't open userConfig.txt");
-        return 1;
+        exit(3);
     }
 
+    // read username and password
     for (int i = 0; i < NUM_OF_USERS; i++) {
         fscanf(file, "%s", users[i].name);
         fscanf(file, "%s", users[i].password);
@@ -151,11 +137,11 @@ int loadUsersData(){
         printf("%d. %s with password %s loaded\n", i, users[i].name, users[i].password);
     }
     fclose(file);
-    return 0;
 }
 
 void logOutUser(int msgId,struct msgbuf receive){
     int flag = -1;
+    // search for user to log out
     for (int i = 0; i< NUM_OF_USERS; i++){
         if (users[i].id == receive.senderId){
             send.type = users[i].id;
@@ -171,10 +157,25 @@ void logOutUser(int msgId,struct msgbuf receive){
     }
     else{
         strcpy(send.message, LOGOUT_CONFIRMATION_MESSAGE);
-        printf("%s (%s)", LOGOUT_CONFIRMATION_MESSAGE, users[flag].name);
+        printf("%s (%s)\n", LOGOUT_CONFIRMATION_MESSAGE, users[flag].name);
         msgsnd(msgId, &send, MESSAGE_SIZE, 0);
-    }
-    
+    }   
 }
 
-
+void servCommunicationLoop(int msgId){
+    long receiveStatus;
+    while(TRUE){
+        fflush(stdout);
+        receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
+        if(receiveStatus > 0){
+            switch(receive.type){
+                case LOGIN_TYPE:
+                    logInUser(msgId, receive);
+                    break;
+                case LOGOUT_TYPE:
+                    logOutUser(msgId, receive);
+                    break;
+            }
+        }
+    }  
+}
