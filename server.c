@@ -54,6 +54,9 @@ void servCommunicationLoop(){
                 case GROUP_LIST_TYPE:
                     sendGroupList();
                     break;
+                case GROUP_EXIT_REQUEST_TYPE:
+                    removeUserFromGroup();
+                    break;
             }
         }
     }  
@@ -253,7 +256,7 @@ void addUserToGroup(){
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
-    else if((isInGroup = isAlreadyInGroup(groupIndex,userIndex))){
+    else if((isInGroup = isAlreadyInGroup(groupIndex,userIndex))>=0){
         send.error = GROUP_JOIN_ERROR_USER_IN_GROUP_TYPE;
         strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE2);
         printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE2,
@@ -305,10 +308,10 @@ int getGroupIndex(char searchedName[GROUPNAME_SIZE]){
 short isAlreadyInGroup(int groupIndex, int userIndex){
     for(int i = 0; i< NUM_OF_USERS;i ++){
         if(groups[groupIndex].users[i] != NULL && 
-            strcmp(groups[groupIndex].users[i]->name,users[userIndex].name) == 0)
-           return 1;
+               strcmp(groups[groupIndex].users[i]->name,users[userIndex].name) == 0)
+           return i;
     }
-    return 0;
+    return -1;
 }
 // return:
 // index of empty slot
@@ -340,3 +343,43 @@ void sendGroupList(){
         printf("Groups list not sended. Error\n");
 }
 
+void removeUserFromGroup(){
+    int userIndex = getUserIndex(receive.senderId);
+    int groupIndex; 
+    int userInGroupIndex;
+
+    send.type = receive.senderId;
+
+    // if not found user with that pid
+    if(userIndex<0){
+        perror("User not found. joinUserToGroup error");
+        exit(6);
+    }
+    // if not found group with that name
+    else if((groupIndex=getGroupIndex(receive.message)) < 0){
+        send.error = GROUP_EXIT_ERROR_NAME_TYPE;
+        strcpy(send.message, GROUP_EXIT_ERROR_MESSAGE1);
+        printf("%s(%s want exit from %s)\n",GROUP_EXIT_ERROR_MESSAGE1,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+    // if user does not in the group with that name
+    else if((userInGroupIndex = isAlreadyInGroup(groupIndex,userIndex))<0){
+        send.error = GROUP_EXIT_ERROR_USER_OUT_GROUP_TYPE;
+        strcpy(send.message, GROUP_EXIT_ERROR_MESSAGE2);
+        printf("%s(%s want exit from %s)\n",GROUP_EXIT_ERROR_MESSAGE2,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+    // exits group
+    else{
+        groups[groupIndex].users[userInGroupIndex] = NULL;
+        send.error = GROUP_EXIT_CONFIRMATION_TYPE;
+        strcpy(send.message, GROUP_EXIT_CONFIRMATION_MESSAGE);
+        printf("%s(%s from %s)\n",GROUP_EXIT_CONFIRMATION_MESSAGE,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+}

@@ -17,3 +17,4 @@ void servCommunicationLoop();
 void sendUsersList();
 void addUserToGroup();
 void sendGroupList();
+void removeUserFromGroup();
