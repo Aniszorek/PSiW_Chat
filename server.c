@@ -11,11 +11,11 @@ struct User{
 struct Group{
     char name[GROUPNAME_SIZE];
     short usersInGroup;
-    struct User users[NUM_OF_GROUP];
+    struct User *users[100];
 };
 
 struct User users[NUM_OF_USERS];
-struct Group groups[NUM_OF_GROUP];
+struct Group groups[NUM_OF_GROUPS];
 struct msgbuf send, receive;
 int msgId;
 
@@ -144,6 +144,12 @@ void loadUsersData(){
         users[i].isLogin = FALSE;
         printf("%d. %s with password %s loaded\n", i, users[i].name, users[i].password);
     }
+    printf("\n");
+    for (int i = 0; i < NUM_OF_GROUPS; i++){
+        fscanf(file, "%s", groups[i].name);
+        groups[i].usersInGroup = 0;
+        printf("%d. %s loaded\n", i, groups[i].name);
+    }
     fclose(file);
 }
 
@@ -186,13 +192,19 @@ void servCommunicationLoop(){
                 case USERS_LIST_TYPE:
                     sendUsersList();
                     break;
+                case GROUP_JOIN_REQUEST_TYPE:
+                    joinUserToGroup();
+                    break;
+                case GROUP_LIST_TYPE:
+                    sendGroupList();
+                    break;
             }
         }
     }  
 }
 
 void sendUsersList(){
-    int validation = 0;
+    short validation = FALSE;
     send.type = receive.senderId;
     strcpy(send.message,"");
 
@@ -200,14 +212,123 @@ void sendUsersList(){
         if(users[i].isLogin){
             strcat(send.message, users[i].name);
             strcat(send.message, ";");
-            validation = 1;
+            validation = TRUE;
         }
     }
     if(!validation){
         perror("No users detected!");
         exit(4);
     }
-    else{
-        msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+    int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+    if(msgSndStatus!=-1)
+        printf("Users list sended\n");
+    else
+        printf("Users list not sended. Error\n");
+}
+
+void joinUserToGroup(){
+    int userIndex = getUserIndex(receive.senderId);
+    int groupIndex; 
+    int emptySlot;
+    short isInGroup;
+
+    send.type = receive.senderId;
+
+    if(userIndex<0){
+        perror("User not found. joinUserToGroup error");
+        exit(6);
     }
+    else if((groupIndex=getGroupIndex(receive.message)) < 0){
+        send.error = GROUP_JOIN_ERROR_NAME_TYPE;
+        strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE1);
+        printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE1,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+    else if((isInGroup = isAlreadyInGroup(groupIndex,userIndex))){
+        send.error = GROUP_JOIN_ERROR_USER_IN_GROUP_TYPE;
+        strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE2);
+        printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE2,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+    else if((emptySlot = findEmptySlot(groupIndex))<0){
+        send.error = GROUP_JOIN_ERROR_FULL_TYPE;
+        strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE3);
+        printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE3,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+    // join group
+    else{
+        groups[groupIndex].users[emptySlot] = &users[userIndex];
+        send.error = GROUP_JOIN_CONFIRMATION_TYPE;
+        strcpy(send.message, GROUP_JOIN_CONFIRMATION_MESSAGE);
+        printf("%s(%s to %s)\n",GROUP_JOIN_CONFIRMATION_MESSAGE,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+}
+
+// return 
+// index of user if everything good
+// -1 if can't found id
+int getUserIndex(int searchedId){
+    for(int i = 0; i<NUM_OF_USERS; i++){
+        if(users[i].id == searchedId)
+            return i;
+    }
+    return -1;
+}
+// return 
+// index of group if everything good
+// -1 if can't found name
+int getGroupIndex(char searchedName[GROUPNAME_SIZE]){
+    for (int i = 0; i<NUM_OF_GROUPS; i++){
+        if(strcmp(groups[i].name, searchedName) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+short isAlreadyInGroup(int groupIndex, int userIndex){
+    for(int i = 0; i< NUM_OF_USERS;i ++){
+        if(groups[groupIndex].users[i] != NULL && 
+            strcmp(groups[groupIndex].users[i]->name,users[userIndex].name) == 0)
+           return 1;
+    }
+    return 0;
+}
+// return 
+// index of empty slot
+// -1 if can't found empty slot
+int findEmptySlot(int groupIndex){
+    for(int i = 0; i<NUM_OF_USERS; i++){
+        if(groups[groupIndex].users[i] == NULL){
+            return i;
+        }
+    }
+    return -1;
+}
+
+void sendGroupList(){
+    send.type = receive.senderId;
+    strcpy(send.message,"");
+
+    for(int i = 0; i<NUM_OF_GROUPS; i++){
+        strcat(send.message, groups[i].name);
+        strcat(send.message, ";");
+    }
+    
+    int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+    if(msgSndStatus!=-1)
+        printf("Groups list sended\n");
+    else
+        printf("Groups list not sended. Error\n");
 }

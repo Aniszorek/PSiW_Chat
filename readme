@@ -8,3 +8,16 @@ client.h - funkcje do klienta
 server.c - wszystko co odnoścnie do serwera
 server.h - funkcje do servera
 
+trzeba dodać helpa z listą instrukcji, póki co:
+!logout - wylogowanie użytkownika, koniec procesu
+!ulist - lista użytkowników zalogowanych
+!gjoin [nazwa_grupy]- dołączenie do grupy
+!glis - nazwy wszystkich grup
+
+funkcje do zrobienia:
+!help - printuje możliwe komendy
+!gm - group message, wysyła wiadomość do grupy
+!um - user message, wysyła wiadomość do użytkownika
+
+odbieranie wiadomości od innych grup i użytkowników 
+będzie współbieżne

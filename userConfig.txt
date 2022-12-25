@@ -16,3 +16,6 @@ user7
 7891
 user8
 8910
+group0
+group1
+group2

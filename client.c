@@ -14,8 +14,6 @@ int main(int argc, char* argv[]){
     }
 
     communicationLoop(msgId);
-    
-    
 }
 
 
@@ -87,10 +85,18 @@ void communicationLoop(){
                 scanf(" %s", userInput);
                 //printf("%s\n", userInput);
 
-                if(strcmp(userInput, "!logout")==0)
+                if(strcmp(userInput, "!logout") == 0)
                     logOut(childPid);
-                if(strcmp(userInput, "!ulist")==0)
+                else if(strcmp(userInput, "!ulist") == 0)
                     requestUsersList();
+                else if(strcmp(userInput, "!gjoin") == 0){
+                    printf("Enter name of group: \n");
+                    scanf(" %s", userInput);
+                    groupJoin(userInput);
+                }
+                else if(strcmp(userInput, "!glist") == 0)
+                    requestGroupsList();
+
             }
         }
         // process receiving message
@@ -136,4 +142,46 @@ void printUsersList(){
             printf("%c", c);
         i++;
     }
+    printf("\n");
+}
+
+void groupJoin(char userInput[GROUPNAME_SIZE]){
+    int id = getpid();
+
+    send.type = GROUP_JOIN_REQUEST_TYPE;
+    send.senderId = id;
+    strcpy(send.message, userInput);
+
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+    msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
+    printf("%s", receive.message);
+}
+
+void requestGroupsList(){
+    int id = getpid();
+    send.type = GROUP_LIST_TYPE;
+    send.senderId = id;
+
+    // send request
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+    // receive list
+    msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
+
+    printGroupsList();
+}
+
+void printGroupsList(){
+    int i = 0;
+    char c;
+
+    printf("\nAll Groups: \n");
+    while((c = receive.message[i]) != '\0'){
+        if(c == ';')
+            printf("\n");
+        else
+            printf("%c", c);
+        i++;
+    }
+    printf("\n");
 }
