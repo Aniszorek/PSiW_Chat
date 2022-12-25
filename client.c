@@ -137,15 +137,16 @@ void requestUsersList(){
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
     msgrcv(msgId, &receive, MESSAGE_SIZE,id,0);
 
-    printUsersList();
+    printReceivedList("Logged in users: ");
 }
 
-// print all users online
-void printUsersList(){
+// print list received from server in the form of:
+// name1;name2;name3
+void printReceivedList(char *message){
     int i = 0;
     char c;
 
-    printf("\nLogged in users: \n");
+    printf("\n%s\n", message);
     while((c = receive.message[i++]) != '\0'){
         if(c == ';')
             printf("\n");
@@ -180,24 +181,8 @@ void requestGroupsList(){
     // receive list
     msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
 
-    printGroupsList();
+    printReceivedList("All Groups: ");
 }
-
-// print list of all groups
-void printGroupsList(){
-    int i = 0;
-    char c;
-
-    printf("\nAll Groups: \n");
-    while((c = receive.message[i++]) != '\0'){
-        if(c == ';')
-            printf("\n");
-        else
-            printf("%c", c);
-    }
-    printf("\n");
-}
-
 // removes user from the group
 void groupExit(char groupName[MESSAGE_SIZE]){
     int id = getpid();
@@ -224,21 +209,7 @@ void requestGroupUsers(char groupName[MESSAGE_SIZE]){
     msgrcv(msgId, &receive, MESSAGE_SIZE,id,0);
 
     if(receive.error == GROUP_USERS_CONFIRMATION_TYPE)
-        printGroupUsers();
+        printReceivedList("Users in the group: ");
     else
         printf("%s\n", receive.message);
-}
-
-void printGroupUsers(){
-    int i = 0;
-    char c;
-
-    printf("\nUsers in the group: \n");
-    while((c = receive.message[i++]) != '\0'){
-        if(c == ';')
-            printf("\n");
-        else
-            printf("%c", c);
-    }
-    printf("\n");
 }
