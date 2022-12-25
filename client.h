@@ -10,3 +10,5 @@ void groupJoin(char userInput[GROUPNAME_SIZE]);
 void requestGroupsList();
 void printGroupsList();
 void groupExit(char userInput[MESSAGE_SIZE]);
+void printGroupUsers();
+void requestGroupUsers(char groupName[MESSAGE_SIZE]);

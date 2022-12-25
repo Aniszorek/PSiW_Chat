@@ -97,6 +97,12 @@ void communicationLoop(){
                     groupExit(userInput);
                 }
 
+                else if(strcmp(userInput, "!guser") == 0){
+                    printf("Enter name of group: \n");
+                    scanf(" %s", userInput);
+                    requestGroupUsers(userInput);
+                }
+
             }
         }
         // process receiving message
@@ -117,6 +123,7 @@ void logOut(int childPid){
     msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
 
     printf("%s",receive.message);
+
     kill(childPid, SIGKILL);
     exit(0);
 }
@@ -149,12 +156,12 @@ void printUsersList(){
 }
 
 // joins user to the group 
-void groupJoin(char userInput[GROUPNAME_SIZE]){
+void groupJoin(char groupName[GROUPNAME_SIZE]){
     int id = getpid();
 
     send.type = GROUP_JOIN_REQUEST_TYPE;
     send.senderId = id;
-    strcpy(send.message, userInput);
+    strcpy(send.message, groupName);
 
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
@@ -192,15 +199,46 @@ void printGroupsList(){
 }
 
 // removes user from the group
-void groupExit(char userInput[MESSAGE_SIZE]){
+void groupExit(char groupName[MESSAGE_SIZE]){
     int id = getpid();
 
     send.type = GROUP_EXIT_REQUEST_TYPE;
     send.senderId = id;
-    strcpy(send.message, userInput);
+    strcpy(send.message, groupName);
 
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
     msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
     printf("%s", receive.message);
+}
+
+// request for list of all users in the group
+void requestGroupUsers(char groupName[MESSAGE_SIZE]){
+    int id = getpid();
+    send.type = GROUP_USERS_TYPE;
+    send.senderId = id;
+    
+    strcpy(send.message, groupName);
+
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+    msgrcv(msgId, &receive, MESSAGE_SIZE,id,0);
+
+    if(receive.error == GROUP_USERS_CONFIRMATION_TYPE)
+        printGroupUsers();
+    else
+        printf("%s\n", receive.message);
+}
+
+void printGroupUsers(){
+    int i = 0;
+    char c;
+
+    printf("\nUsers in the group: \n");
+    while((c = receive.message[i++]) != '\0'){
+        if(c == ';')
+            printf("\n");
+        else
+            printf("%c", c);
+    }
+    printf("\n");
 }

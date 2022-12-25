@@ -57,6 +57,9 @@ void servCommunicationLoop(){
                 case GROUP_EXIT_REQUEST_TYPE:
                     removeUserFromGroup();
                     break;
+                case GROUP_USERS_TYPE:
+                    sendGroupUsers();
+                    break;
             }
         }
     }  
@@ -273,6 +276,7 @@ void addUserToGroup(){
     // join group
     else{
         groups[groupIndex].users[emptySlot] = &users[userIndex];
+        groups[groupIndex].usersInGroup++;
         send.error = GROUP_JOIN_CONFIRMATION_TYPE;
         strcpy(send.message, GROUP_JOIN_CONFIRMATION_MESSAGE);
         printf("%s(%s to %s)\n",GROUP_JOIN_CONFIRMATION_MESSAGE,
@@ -343,6 +347,7 @@ void sendGroupList(){
         printf("Groups list not sended. Error\n");
 }
 
+// remove user from the group
 void removeUserFromGroup(){
     int userIndex = getUserIndex(receive.senderId);
     int groupIndex; 
@@ -382,4 +387,44 @@ void removeUserFromGroup(){
     }
 
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+}
+
+// send users of the group
+void sendGroupUsers(){
+    send.type = receive.senderId;
+
+    int groupIndex = getGroupIndex(receive.message);
+    int userIndex = getUserIndex(receive.senderId);
+
+    if(groupIndex < 0){
+        send.error =  GROUP_USERS_ERROR_NAME_TYPE;
+        strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
+        printf("%s(%s want to print users of group)\n",
+                            GROUP_ERROR_NOT_EXIST_MESSAGE,
+                            users[userIndex].name);
+    }
+    else if(groups[groupIndex].usersInGroup==0){
+        send.error =  GROUP_ERROR_EMPTY_TYPE;
+        strcpy(send.message, GROUP_ERROR_EMPTY_MESSAGE);
+        printf("%s(%s want to print users of %s)\n",
+                            GROUP_ERROR_EMPTY_MESSAGE,
+                            users[userIndex].name,  
+                            groups[groupIndex].name);
+    }
+    else{
+        int usersInGroup = groups[groupIndex].usersInGroup;
+        send.error = GROUP_USERS_CONFIRMATION_TYPE;
+        strcpy(send.message, "");
+        for(int i = 0; i<usersInGroup; i++){
+            strcat(send.message, groups[groupIndex].users[i]->name);
+            strcat(send.message, ";");
+        }
+    }
+
+    int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+    if(msgSndStatus!=-1)
+        printf("Groups list sended\n");
+    else
+        printf("Groups list not sended. Error\n");    
 }

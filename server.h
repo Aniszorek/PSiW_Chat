@@ -18,3 +18,4 @@ void sendUsersList();
 void addUserToGroup();
 void sendGroupList();
 void removeUserFromGroup();
+void sendGroupUsers();

@@ -41,6 +41,10 @@
 #define GROUP_EXIT_ERROR_NAME_TYPE 15
 #define GROUP_EXIT_ERROR_USER_OUT_GROUP_TYPE 16
 #define GROUP_EXIT_CONFIRMATION_TYPE 17
+#define GROUP_USERS_TYPE 18
+#define GROUP_USERS_ERROR_NAME_TYPE 19
+#define GROUP_ERROR_EMPTY_TYPE 20
+#define GROUP_USERS_CONFIRMATION_TYPE 21
 
 #define LOGIN_ERROR_MESSAGE "Username does not exist\n"
 #define LOGIN_ERROR_MESSAGE2 "Incorrect password\n"
@@ -54,6 +58,9 @@
 #define GROUP_EXIT_ERROR_MESSAGE1 "Group with that name does not exist\n"
 #define GROUP_EXIT_ERROR_MESSAGE2 "You aren't member of the group\n"
 #define GROUP_EXIT_CONFIRMATION_MESSAGE "User exited from the group\n"
+#define GROUP_ERROR_NOT_EXIST_MESSAGE "Group with that name does not exist\n"
+#define GROUP_ERROR_EMPTY_MESSAGE "The group is empty"
+#define GROUP_USERS_CONFIRMATION_MESSAGE "List of users in the group sent"
 
 
 struct msgbuf{

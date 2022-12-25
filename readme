@@ -15,6 +15,7 @@ trzeba dodać helpa z listą instrukcji, póki co:
 !glis - nazwy wszystkich grup
 
 funkcje do zrobienia:
+!guser [nazwa_grupy] - wyświetla użytkowników w danej grupie
 !help - printuje możliwe komendy
 !gm - group message, wysyła wiadomość do grupy
 !um - user message, wysyła wiadomość do użytkownika
