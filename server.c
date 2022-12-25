@@ -32,7 +32,34 @@ int main(){
     
 }
 
+void servCommunicationLoop(){
+    long receiveStatus;
+    while(TRUE){
+        fflush(stdout);
+        receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
+        if(receiveStatus > 0){
+            switch(receive.type){
+                case LOGIN_TYPE:
+                    logInUser();
+                    break;
+                case LOGOUT_TYPE:
+                    logOutUser();
+                    break;
+                case USERS_LIST_TYPE:
+                    sendUsersList();
+                    break;
+                case GROUP_JOIN_REQUEST_TYPE:
+                    addUserToGroup();
+                    break;
+                case GROUP_LIST_TYPE:
+                    sendGroupList();
+                    break;
+            }
+        }
+    }  
+}
 
+// checks if username and password is correct
 // return:
 // 0 if username incorrect
 // -1 if password incorrect
@@ -65,6 +92,7 @@ int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZ
     return -2;
 }
 
+// login user
 void logInUser(){
     int flag = -1;
     int validation=-2;
@@ -128,6 +156,8 @@ void logInUser(){
     msgsnd(msgId, &send,MESSAGE_SIZE,0);
 }
 
+// load data from config
+// load name of users, password, and name of groups
 void loadUsersData(){
     FILE *file = fopen("userConfig.txt", "r");
     if (file == NULL)
@@ -153,6 +183,7 @@ void loadUsersData(){
     fclose(file);
 }
 
+// log out user
 void logOutUser(){
     int flag = -1;
     // search for user to log out
@@ -176,33 +207,7 @@ void logOutUser(){
     }   
 }
 
-void servCommunicationLoop(){
-    long receiveStatus;
-    while(TRUE){
-        fflush(stdout);
-        receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, 0, 0);
-        if(receiveStatus > 0){
-            switch(receive.type){
-                case LOGIN_TYPE:
-                    logInUser();
-                    break;
-                case LOGOUT_TYPE:
-                    logOutUser();
-                    break;
-                case USERS_LIST_TYPE:
-                    sendUsersList();
-                    break;
-                case GROUP_JOIN_REQUEST_TYPE:
-                    joinUserToGroup();
-                    break;
-                case GROUP_LIST_TYPE:
-                    sendGroupList();
-                    break;
-            }
-        }
-    }  
-}
-
+// send to user list of all users online
 void sendUsersList(){
     short validation = FALSE;
     send.type = receive.senderId;
@@ -228,7 +233,8 @@ void sendUsersList(){
         printf("Users list not sended. Error\n");
 }
 
-void joinUserToGroup(){
+// add user to the group
+void addUserToGroup(){
     int userIndex = getUserIndex(receive.senderId);
     int groupIndex; 
     int emptySlot;
@@ -274,7 +280,7 @@ void joinUserToGroup(){
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 }
 
-// return 
+// return: 
 // index of user if everything good
 // -1 if can't found id
 int getUserIndex(int searchedId){
@@ -284,7 +290,7 @@ int getUserIndex(int searchedId){
     }
     return -1;
 }
-// return 
+// return:
 // index of group if everything good
 // -1 if can't found name
 int getGroupIndex(char searchedName[GROUPNAME_SIZE]){
@@ -304,7 +310,7 @@ short isAlreadyInGroup(int groupIndex, int userIndex){
     }
     return 0;
 }
-// return 
+// return:
 // index of empty slot
 // -1 if can't found empty slot
 int findEmptySlot(int groupIndex){
@@ -316,6 +322,7 @@ int findEmptySlot(int groupIndex){
     return -1;
 }
 
+// send to user list of all groups
 void sendGroupList(){
     send.type = receive.senderId;
     strcpy(send.message,"");
@@ -332,3 +339,4 @@ void sendGroupList(){
     else
         printf("Groups list not sended. Error\n");
 }
+

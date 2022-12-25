@@ -37,6 +37,7 @@
 #define GROUP_JOIN_ERROR_FULL_TYPE 11
 #define GROUP_JOIN_CONFIRMATION_TYPE 12
 #define GROUP_LIST_TYPE 13
+#define GROUP_EXIT_REQUEST_TYPE 14
 
 #define LOGIN_ERROR_MESSAGE "Username does not exist\n"
 #define LOGIN_ERROR_MESSAGE2 "Incorrect password\n"

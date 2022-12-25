@@ -13,7 +13,7 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    communicationLoop(msgId);
+    communicationLoop();
 }
 
 
@@ -52,24 +52,15 @@ int logIn(){
             perror("Message send error\n");
         }
 
-        // print error
+        // print error or confirmation
         fflush(stdout);
-        if(receive.error == LOGIN_ERROR_USERNAME_TYPE){
-            printf(LOGIN_ERROR_MESSAGE);
-        }
-        else if(receive.error == LOGIN_ERROR_PASSWORD_TYPE){
-            printf(LOGIN_ERROR_MESSAGE2);
-        }
-        else if(receive.error == LOGIN_ERROR_USER_LOGGED_TYPE){
-            printf(LOGIN_ERROR_MESSAGE3);
-        }
-        else if (receive.error == LOGIN_CONFIRMATION_TYPE){
-            printf(LOGIN_CONFIRMATION_MESSAGE);
+        printf("%s", receive.message);
+
+        // if successfully login, end while
+        if (receive.error == LOGIN_CONFIRMATION_TYPE)
             return 0;
-        }
     }
     return 1;
-
 }
 
 void communicationLoop(){
@@ -87,15 +78,24 @@ void communicationLoop(){
 
                 if(strcmp(userInput, "!logout") == 0)
                     logOut(childPid);
+
                 else if(strcmp(userInput, "!ulist") == 0)
                     requestUsersList();
+
                 else if(strcmp(userInput, "!gjoin") == 0){
                     printf("Enter name of group: \n");
                     scanf(" %s", userInput);
                     groupJoin(userInput);
                 }
+
                 else if(strcmp(userInput, "!glist") == 0)
                     requestGroupsList();
+
+                else if(strcmp(userInput, "!gexit") == 0){
+                    printf("Enter name of group: \n");
+                    scanf(" %s", userInput);
+                    groupExit(userInput);
+                }
 
             }
         }
@@ -104,7 +104,9 @@ void communicationLoop(){
             //pass
         }
     }
-}   
+}  
+
+// function to log out user - exitting program
 void logOut(int childPid){
     int id = getpid();
 
@@ -119,6 +121,7 @@ void logOut(int childPid){
     exit(0);
 }
 
+// request for list of all users online
 void requestUsersList(){
     int id = getpid();
     send.type = USERS_LIST_TYPE;
@@ -130,21 +133,22 @@ void requestUsersList(){
     printUsersList();
 }
 
+// print all users online
 void printUsersList(){
     int i = 0;
     char c;
 
     printf("\nLogged in users: \n");
-    while((c = receive.message[i]) != '\0'){
+    while((c = receive.message[i++]) != '\0'){
         if(c == ';')
             printf("\n");
         else
             printf("%c", c);
-        i++;
     }
     printf("\n");
 }
 
+// joins user to the group 
 void groupJoin(char userInput[GROUPNAME_SIZE]){
     int id = getpid();
 
@@ -158,6 +162,7 @@ void groupJoin(char userInput[GROUPNAME_SIZE]){
     printf("%s", receive.message);
 }
 
+// request for list of all groups
 void requestGroupsList(){
     int id = getpid();
     send.type = GROUP_LIST_TYPE;
@@ -171,17 +176,31 @@ void requestGroupsList(){
     printGroupsList();
 }
 
+// print list of all groups
 void printGroupsList(){
     int i = 0;
     char c;
 
     printf("\nAll Groups: \n");
-    while((c = receive.message[i]) != '\0'){
+    while((c = receive.message[i++]) != '\0'){
         if(c == ';')
             printf("\n");
         else
             printf("%c", c);
-        i++;
     }
     printf("\n");
+}
+
+// removes user from the group
+void groupExit(char userInput[MESSAGE_SIZE]){
+    int id = getpid();
+
+    send.type = GROUP_EXIT_REQUEST_TYPE;
+    send.senderId = id;
+    strcpy(send.message, userInput);
+
+    msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+    msgrcv(msgId, &receive, MESSAGE_SIZE, id, 0);
+    printf("%s", receive.message);
 }

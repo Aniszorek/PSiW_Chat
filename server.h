@@ -15,5 +15,5 @@ void logInUser();
 void logOutUser();
 void servCommunicationLoop();
 void sendUsersList();
-void joinUserToGroup();
+void addUserToGroup();
 void sendGroupList();
