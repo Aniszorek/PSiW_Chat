@@ -191,7 +191,6 @@ void loadUsersData(){
 
 // log out user
 void logOutUser(){
-    int flag = -1;
     // search for user to log out
     int userIndex = getUserIndex(receive.senderId);
 
