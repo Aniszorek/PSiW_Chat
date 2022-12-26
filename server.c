@@ -104,7 +104,7 @@ void logInUser(){
     int validation=-2;
     
 
-    // check if user exist
+    // check if user exist and password is correct
     for (int i = 0; i< NUM_OF_USERS; i++){
         fflush(stdout);
         char tempStr[USERNAME_SIZE + PASSWORD_SIZE + 1];
@@ -193,22 +193,18 @@ void loadUsersData(){
 void logOutUser(){
     int flag = -1;
     // search for user to log out
-    for (int i = 0; i< NUM_OF_USERS; i++){
-        if (users[i].id == receive.senderId){
-            send.type = users[i].id;
-            users[i].id = 0;
-            users[i].isLogin = FALSE;
-            flag = i;
-            break;
-        }
-    }
-    if(flag==-1){
+    int userIndex = getUserIndex(receive.senderId);
+
+    if(userIndex==-1){
         perror("User not found. Logout error");
         exit(2);
     }
     else{
+        send.type = users[userIndex].id;
+        users[userIndex].id = 0;
+        users[userIndex].isLogin = FALSE;
         strcpy(send.message, LOGOUT_CONFIRMATION_MESSAGE);
-        printf("%s (%s)\n", LOGOUT_CONFIRMATION_MESSAGE, users[flag].name);
+        printf("%s (%s)\n", LOGOUT_CONFIRMATION_MESSAGE, users[userIndex].name);
         msgsnd(msgId, &send, MESSAGE_SIZE, 0);
     }   
 }
@@ -254,8 +250,8 @@ void addUserToGroup(){
     }
     else if((groupIndex=getGroupIndex(receive.message)) < 0){
         send.error = GROUP_JOIN_ERROR_NAME_TYPE;
-        strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE1);
-        printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE1,
+        strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
+        printf("%s(%s want join to %s)\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -363,8 +359,8 @@ void removeUserFromGroup(){
     // if not found group with that name
     else if((groupIndex=getGroupIndex(receive.message)) < 0){
         send.error = GROUP_EXIT_ERROR_NAME_TYPE;
-        strcpy(send.message, GROUP_EXIT_ERROR_MESSAGE1);
-        printf("%s(%s want exit from %s)\n",GROUP_EXIT_ERROR_MESSAGE1,
+        strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
+        printf("%s(%s want exit from %s)\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
