@@ -11,7 +11,7 @@ struct User{
 struct Group{
     char name[GROUPNAME_SIZE];
     short usersInGroup;
-    struct User *users[100];
+    struct User *users[NUM_OF_USERS];
 };
 
 struct User users[NUM_OF_USERS];
@@ -181,6 +181,8 @@ void loadUsersData(){
         printf("%d. %s with password %s loaded\n", i, users[i].name, users[i].password);
     }
     printf("\n");
+
+    // read group name
     for (int i = 0; i < NUM_OF_GROUPS; i++){
         fscanf(file, "%s", groups[i].name);
         groups[i].usersInGroup = 0;
@@ -247,6 +249,7 @@ void addUserToGroup(){
         perror("User not found. joinUserToGroup error");
         exit(6);
     }
+    // if not found group name
     else if((groupIndex=getGroupIndex(receive.message)) < 0){
         send.error = GROUP_JOIN_ERROR_NAME_TYPE;
         strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
@@ -254,6 +257,7 @@ void addUserToGroup(){
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
+    // if user already in group
     else if((isInGroup = isAlreadyInGroup(groupIndex,userIndex))>=0){
         send.error = GROUP_JOIN_ERROR_USER_IN_GROUP_TYPE;
         strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE2);
@@ -261,6 +265,7 @@ void addUserToGroup(){
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
+    // if group is full
     else if((emptySlot = findEmptySlot(groupIndex))<0){
         send.error = GROUP_JOIN_ERROR_FULL_TYPE;
         strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE3);
@@ -304,6 +309,9 @@ int getGroupIndex(char searchedName[GROUPNAME_SIZE]){
     return -1;
 }
 
+// return:
+// index of user in group
+// -1 if user not in group
 short isAlreadyInGroup(int groupIndex, int userIndex){
     for(int i = 0; i< NUM_OF_USERS;i ++){
         if(groups[groupIndex].users[i] != NULL && 
