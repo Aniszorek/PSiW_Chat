@@ -6,6 +6,7 @@ struct User{
     char password[PASSWORD_SIZE];
     int id;
     int isLogin;
+    short incorrectLoginAttempts;
 };
 
 struct Group{
@@ -66,97 +67,105 @@ void servCommunicationLoop(){
 }
 
 // checks if username and password is correct
-// return:
-// 0 if username incorrect
-// -1 if password incorrect
-// 1 if correct
-// -2 if error
-int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZE + 1]){
+int namePasswordCmp(struct msgbuf message, char str[USERNAME_SIZE + PASSWORD_SIZE + 1], int userIndex){
     int tmp = -1;
     int maxNum = USERNAME_SIZE + PASSWORD_SIZE + 1;
-    //compare username
+    // compare username
     for (int i = 0; i < maxNum; i++ ){
         if(message.message[i] == ';' && str[i] == ';'){
             tmp = i;
+            // username correct
+            if(users[userIndex].incorrectLoginAttempts >= MAX_LOGIN_ATTEMPS) 
+                return TOO_MANY_LOGIN_ATTEMPTS;
             break;
         }
+
         if (message.message[i] != str[i]){
-            return 0;
+            return USERNAME_INCORRECT;
         }
     }
-    // if ; is not in [i] position then username is not correct
-    if(tmp == -1) return 0;
-    //compare password
+    // compare password
     for (int j = tmp; j<maxNum; j++){
         if(message.message[j] == '\0' && str[j] == '\0'){
-            return 1;
+            if (users[userIndex].isLogin)
+                return USER_LOGGED_IN;
+            else
+                return USERNAME_PASSWORD_CORRECT;
         }
         if(message.message[j] != str[j]){
-            return -1;
+            return PASSWORD_INCORRECT;
         }
     }
-    return -2;
+    return LOGIN_ERROR;
 }
 
 // login user
 void logInUser(){
-    int flag = -1;
+    int userIndex = -1;
     int validation=-2;
     
 
     // check if user exist and password is correct
     for (int i = 0; i< NUM_OF_USERS; i++){
-        fflush(stdout);
-        char tempStr[USERNAME_SIZE + PASSWORD_SIZE + 1];
+        userIndex = i;
+        fflush(stdout); 
+        char userNamePassword[USERNAME_SIZE + PASSWORD_SIZE + 1];
 
-        strcpy(tempStr, users[i].name);
-        strcat(tempStr, ";");
-        strcat(tempStr, users[i].password);
+        strcpy(userNamePassword, users[i].name);
+        strcat(userNamePassword, ";");
+        strcat(userNamePassword, users[i].password);
 
-        validation = namePasswordCmp(receive, tempStr);
-        if (validation == 1){
-            // if user already logged in
-            if(users[i].isLogin){
-                validation = -3;
-                break;
-            }
-            else{
-                flag = i;
-                users[i].id = receive.senderId;
-                users[i].isLogin = TRUE;
-                break;
-            }
+        // compare username and password 
+        validation = namePasswordCmp(receive, userNamePassword, i);
+        
 
+        if (validation == USERNAME_PASSWORD_CORRECT){
+            users[i].id = receive.senderId;
+            users[i].isLogin = TRUE;
+            break;
         }
-        else if (validation == -1) break;
+        else if (validation == LOGIN_ERROR) {
+            perror("Can't compare username and password");
+            exit(7);
+        }
+        // if username is correct break loop
+        else if (validation < -1) 
+            break;
     }
 
-    if(flag == - 1){
-        // username does not exist
-        if(validation == 0){
-            send.error = LOGIN_ERROR_USERNAME_TYPE;
-            strcpy(send.message, LOGIN_ERROR_MESSAGE);
-            printf("%s\n", LOGIN_ERROR_MESSAGE);
-        }
-        // password is incorrect
-        else if (validation == -1) {
-            send.error = LOGIN_ERROR_PASSWORD_TYPE;
-            strcpy(send.message, LOGIN_ERROR_MESSAGE2);
-            printf("%s\n", LOGIN_ERROR_MESSAGE2);
-        }
-        // user already logged in
-        else{
-            send.error = LOGIN_ERROR_USER_LOGGED_TYPE;
-            strcpy(send.message, LOGIN_ERROR_MESSAGE3);
-            printf("%s\n", LOGIN_ERROR_MESSAGE3);
-        }
+
+    // username does not exist
+    if(validation == USERNAME_INCORRECT){
+        send.error = LOGIN_ERROR_USERNAME_TYPE;
+        strcpy(send.message, LOGIN_ERROR_MESSAGE);
+        printf("%s\n", LOGIN_ERROR_MESSAGE);
+    }
+    // password is incorrect
+    else if (validation == PASSWORD_INCORRECT) {
+        users[userIndex].incorrectLoginAttempts++;
+        send.error = LOGIN_ERROR_PASSWORD_TYPE;
+        strcpy(send.message, LOGIN_ERROR_MESSAGE2);
+        printf("%s (%s)\n\n", LOGIN_ERROR_MESSAGE2, users[userIndex].name);
+    }
+    // user already logged in
+    else if (validation == USER_LOGGED_IN){
+        users[userIndex].incorrectLoginAttempts++;
+        send.error = LOGIN_ERROR_USER_LOGGED_TYPE;
+        strcpy(send.message, LOGIN_ERROR_MESSAGE3);
+        printf("%s (%s)\n\n", LOGIN_ERROR_MESSAGE3, users[userIndex].name);
+    }
+    else if (validation == TOO_MANY_LOGIN_ATTEMPTS){
+        send.error = LOGIN_ERROR_ATTEMPTS_TYPE;
+        strcpy(send.message, LOGIN_ERROR_MESSAGE4);
+        printf("%s (%s)\n\n", LOGIN_ERROR_MESSAGE4, users[userIndex].name);
     }
     // user logged in
     else{
         send.error = LOGIN_CONFIRMATION_TYPE;
         strcpy(send.message, LOGIN_CONFIRMATION_MESSAGE);
-        printf("%s (%s)\n", LOGIN_CONFIRMATION_MESSAGE, users[flag].name);
+        printf("%s (%s)\n\n", LOGIN_CONFIRMATION_MESSAGE, users[userIndex].name);
     }
+
     // send information
     send.type = receive.senderId;
     msgsnd(msgId, &send,MESSAGE_SIZE,0);
@@ -178,6 +187,7 @@ void loadUsersData(){
         fscanf(file, "%s", users[i].password);
         users[i].id = 0;
         users[i].isLogin = FALSE;
+        users[i].incorrectLoginAttempts = 0;
         printf("%d. %s with password %s loaded\n", i, users[i].name, users[i].password);
     }
     printf("\n");
@@ -253,7 +263,7 @@ void addUserToGroup(){
     else if((groupIndex=getGroupIndex(receive.message)) < 0){
         send.error = GROUP_JOIN_ERROR_NAME_TYPE;
         strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
-        printf("%s(%s want join to %s)\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
+        printf("%s(%s want join to %s)\n\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -261,7 +271,7 @@ void addUserToGroup(){
     else if((isInGroup = isAlreadyInGroup(groupIndex,userIndex))>=0){
         send.error = GROUP_JOIN_ERROR_USER_IN_GROUP_TYPE;
         strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE2);
-        printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE2,
+        printf("%s(%s want join to %s)\n\n",GROUP_JOIN_ERROR_MESSAGE2,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -269,7 +279,7 @@ void addUserToGroup(){
     else if((emptySlot = findEmptySlot(groupIndex))<0){
         send.error = GROUP_JOIN_ERROR_FULL_TYPE;
         strcpy(send.message, GROUP_JOIN_ERROR_MESSAGE3);
-        printf("%s(%s want join to %s)\n",GROUP_JOIN_ERROR_MESSAGE3,
+        printf("%s(%s want join to %s)\n\n",GROUP_JOIN_ERROR_MESSAGE3,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -279,7 +289,7 @@ void addUserToGroup(){
         groups[groupIndex].usersInGroup++;
         send.error = GROUP_JOIN_CONFIRMATION_TYPE;
         strcpy(send.message, GROUP_JOIN_CONFIRMATION_MESSAGE);
-        printf("%s(%s to %s)\n",GROUP_JOIN_CONFIRMATION_MESSAGE,
+        printf("%s(%s to %s)\n\n",GROUP_JOIN_CONFIRMATION_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -345,7 +355,7 @@ void sendGroupList(){
     int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
     if(msgSndStatus!=-1)
-        printf("Groups list sended\n");
+        printf("Groups list sended\n\n");
     else
         printf("Groups list not sended. Error\n");
 }
@@ -367,7 +377,7 @@ void removeUserFromGroup(){
     else if((groupIndex=getGroupIndex(receive.message)) < 0){
         send.error = GROUP_EXIT_ERROR_NAME_TYPE;
         strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
-        printf("%s(%s want exit from %s)\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
+        printf("%s(%s want exit from %s)\n\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -375,7 +385,7 @@ void removeUserFromGroup(){
     else if((userInGroupIndex = isAlreadyInGroup(groupIndex,userIndex))<0){
         send.error = GROUP_EXIT_ERROR_USER_OUT_GROUP_TYPE;
         strcpy(send.message, GROUP_EXIT_ERROR_MESSAGE2);
-        printf("%s(%s want exit from %s)\n",GROUP_EXIT_ERROR_MESSAGE2,
+        printf("%s(%s want exit from %s)\n\n",GROUP_EXIT_ERROR_MESSAGE2,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -384,7 +394,7 @@ void removeUserFromGroup(){
         groups[groupIndex].users[userInGroupIndex] = NULL;
         send.error = GROUP_EXIT_CONFIRMATION_TYPE;
         strcpy(send.message, GROUP_EXIT_CONFIRMATION_MESSAGE);
-        printf("%s(%s from %s)\n",GROUP_EXIT_CONFIRMATION_MESSAGE,
+        printf("%s(%s from %s)\n\n",GROUP_EXIT_CONFIRMATION_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
     }
@@ -402,14 +412,14 @@ void sendGroupUsers(){
     if(groupIndex < 0){
         send.error =  GROUP_USERS_ERROR_NAME_TYPE;
         strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
-        printf("%s(%s want to print users of group)\n",
+        printf("%s(%s want to print users of group)\n\n",
                             GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name);
     }
     else if(groups[groupIndex].usersInGroup==0){
         send.error =  GROUP_ERROR_EMPTY_TYPE;
         strcpy(send.message, GROUP_ERROR_EMPTY_MESSAGE);
-        printf("%s(%s want to print users of %s)\n",
+        printf("%s(%s want to print users of %s)\n\n",
                             GROUP_ERROR_EMPTY_MESSAGE,
                             users[userIndex].name,  
                             groups[groupIndex].name);
@@ -427,7 +437,7 @@ void sendGroupUsers(){
     int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
     if(msgSndStatus!=-1)
-        printf("Groups list sended\n");
+        printf("Groups list sended\n\n");
     else
         printf("Groups list not sended. Error\n");    
 }

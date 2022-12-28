@@ -17,6 +17,8 @@
 #define NUM_OF_USERS 9
 #define NUM_OF_GROUPS 3
 
+#define MAX_LOGIN_ATTEMPS 3
+
 #define MESSAGE_SIZE 1024
 #define USERNAME_SIZE 16
 #define PASSWORD_SIZE 16
@@ -28,6 +30,7 @@
 #define LOGIN_ERROR_PASSWORD_TYPE 2
 #define LOGIN_ERROR_USERNAME_TYPE 3
 #define LOGIN_ERROR_USER_LOGGED_TYPE 4
+#define LOGIN_ERROR_ATTEMPTS_TYPE -1
 #define LOGIN_CONFIRMATION_TYPE 5
 #define LOGOUT_TYPE 6
 #define USERS_LIST_TYPE 7
@@ -49,6 +52,7 @@
 #define LOGIN_ERROR_MESSAGE "Username does not exist\n"
 #define LOGIN_ERROR_MESSAGE2 "Incorrect password\n"
 #define LOGIN_ERROR_MESSAGE3 "User already logged in\n"
+#define LOGIN_ERROR_MESSAGE4 "Too many login attempts. Please contact the site to clarify the situation\n"
 #define LOGIN_CONFIRMATION_MESSAGE "User logged in. Welcome!\n"
 #define LOGOUT_CONFIRMATION_MESSAGE "User logged out.\n"
 #define GROUP_JOIN_ERROR_MESSAGE2 "You already are member of the group\n"
