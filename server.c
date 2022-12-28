@@ -140,14 +140,12 @@ void logInUser(){
         strcpy(send.message, LOGIN_ERROR_MESSAGE);
         printf("%s\n", LOGIN_ERROR_MESSAGE);
     }
-    // password is incorrect
     else if (validation == PASSWORD_INCORRECT) {
         users[userIndex].incorrectLoginAttempts++;
         send.error = LOGIN_ERROR_PASSWORD_TYPE;
         strcpy(send.message, LOGIN_ERROR_MESSAGE2);
         printf("%s (%s)\n\n", LOGIN_ERROR_MESSAGE2, users[userIndex].name);
     }
-    // user already logged in
     else if (validation == USER_LOGGED_IN){
         users[userIndex].incorrectLoginAttempts++;
         send.error = LOGIN_ERROR_USER_LOGGED_TYPE;
