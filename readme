@@ -14,11 +14,8 @@ trzeba dodać helpa z listą instrukcji, póki co:
 !gjoin [nazwa_grupy]- dołączenie do grupy
 !glis - nazwy wszystkich grup
 !guser [nazwa_grupy] - wyświetla użytkowników w danej grupie
-
-funkcje do zrobienia:
 !help - printuje możliwe komendy
 !gm - group message, wysyła wiadomość do grupy
 !um - user message, wysyła wiadomość do użytkownika
 
-odbieranie wiadomości od innych grup i użytkowników 
-będzie współbieżne
+
