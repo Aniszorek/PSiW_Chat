@@ -17,12 +17,13 @@ int main(int argc, char* argv[]){
 }
 
 
-// function to log in user 
-int logIn(){
-    
-    char username[USERNAME_SIZE]; 
+// function to log in user
+int logIn(int msgId, int childPid){
+
+    char username[USERNAME_SIZE];
     char password[PASSWORD_SIZE];
     int pid = getpid();
+
 
     while(TRUE){
         fflush(stdout);
@@ -35,17 +36,18 @@ int logIn(){
         fflush(stdout);
         send.type = LOGIN_TYPE;
         send.senderId = pid;
+		send.receiverId = childPid;
 
         strcpy(send.message, username);
         strcat(send.message, ";");
         strcat(send.message, password);
-        
+
         int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
         if (msgSndStatus == -1){
             perror("Message send error\n");
         }
 
-        // check for error 
+        // check for error
         fflush(stdout);
         int msgRcvStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, pid, 0);
         if (msgRcvStatus == -1){
@@ -63,16 +65,26 @@ int logIn(){
     return 1;
 }
 
-void communicationLoop(){
-    if(logIn(msgId)==0){
-        int childPid = fork();
 
-        // process doing commands from input
-        if(childPid > 0){
+void communicationLoop(){
+
+    int ppid = getpid();
+
+	int childPid = fork();
+
+	if(childPid > 0)
+	{
+		 if(logIn(msgId,childPid)==0)
+		 {
+
+			int id = getpid();
+
+			//int childPid = fork();
+			// process doing commands from input
             printf("Ready to chat.\n");
             while(TRUE){
                 char userInput[MESSAGE_SIZE] = "";
-                
+
                 scanf(" %s", userInput);
                 //printf("%s\n", userInput);
 
@@ -103,14 +115,60 @@ void communicationLoop(){
                     requestGroupUsers(userInput);
                 }
 
+				//sending messages
+				else if(!strcmp(userInput,"!dm"))
+				{
+					printf("Enter username of the reciever:\n");
+					scanf(" %s",userInput);
+					sendDirectMessage(userInput);
+				}
+				else if(!strcmp(userInput,"!gm"))
+				{
+					printf("Enter name of the group:\n");
+					scanf(" %s",userInput);
+					sendGroupMessage(userInput);
+				}
+
+
             }
+
+
+		}
+	}
+	// process receiving message
+    else{
+            while(TRUE)
+            {
+                long status;
+				status = msgrcv(msgId, &receive, MESSAGE_SIZE, getpid(), 0);
+
+                if(status>0)
+                {
+                    switch(receive.error)
+                    {
+                        case DIRECT_MESSAGE_RECEIVE_TYPE:
+                        {
+                            printf("%s\n",receive.message);
+                            break;
+                        }
+
+                        case GROUP_MESSAGE_RECEIVE_TYPE:
+                        {
+                            printf("%s\n",receive.message);
+                            break;
+                        }
+
+                        default:
+                        break;
+                    }
+                }
+
+            }
+
         }
-        // process receiving message
-        else{
-            //pass
-        }
-    }
-}  
+
+
+}
 
 // function to log out user - exitting program
 void logOut(int childPid){
@@ -133,7 +191,7 @@ void requestUsersList(){
     int id = getpid();
     send.type = USERS_LIST_TYPE;
     send.senderId = id;
-    
+
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
     msgrcv(msgId, &receive, MESSAGE_SIZE,id,0);
 
@@ -156,7 +214,7 @@ void printReceivedList(char *message){
     printf("\n");
 }
 
-// joins user to the group 
+// joins user to the group
 void groupJoin(char groupName[GROUPNAME_SIZE]){
     int id = getpid();
 
@@ -202,7 +260,7 @@ void requestGroupUsers(char groupName[MESSAGE_SIZE]){
     int id = getpid();
     send.type = GROUP_USERS_TYPE;
     send.senderId = id;
-    
+
     strcpy(send.message, groupName);
 
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
@@ -212,4 +270,65 @@ void requestGroupUsers(char groupName[MESSAGE_SIZE]){
         printReceivedList("Users in the group: ");
     else
         printf("%s\n", receive.message);
+}
+
+
+//send dm to the user with specified nickname
+void sendDirectMessage(char username[USERNAME_SIZE])
+{
+	int id = getpid();
+	char mBuf[MESSAGE_SIZE - USERNAME_SIZE - 1]={"\0"};
+	printf("Type a message:\n");
+	scanf(" %s",mBuf);
+
+	send.type = DIRECT_MESSAGE_TYPE;
+	send.senderId = id;
+
+	strcpy(send.message,username);
+	strcat(send.message,";");
+	strcat(send.message,mBuf);
+
+    //printf("message: %s\n",send.message);
+
+	//querry
+	msgsnd(msgId,&send,MESSAGE_SIZE,0);
+
+	//rspnd
+	msgrcv(msgId,&receive,MESSAGE_SIZE,id,0);
+
+	if(receive.error == DIRECT_MESSAGE_CONFIRMATION_TYPE)
+		printf("Message send to %s\n",username);
+	else
+		printf("%s\n",receive.message);
+
+
+
+}
+
+
+void sendGroupMessage(char groupname[GROUPNAME_SIZE])
+{
+	int id = getpid();
+	char mBuf[MESSAGE_SIZE - USERNAME_SIZE - 1]={"\0"};
+	printf("Type a message:\n");
+	scanf(" %s",mBuf);
+
+	send.type = GROUP_MESSAGE_TYPE;
+	send.senderId = id;
+
+	strcpy(send.message,groupname);
+	strcat(send.message,";");
+	strcat(send.message,mBuf);
+
+
+	//querry
+	msgsnd(msgId,&send,MESSAGE_SIZE,0);
+
+	//rspnd
+	msgrcv(msgId,&receive,MESSAGE_SIZE,id,0);
+
+	if(receive.error == GROUP_MESSAGE_CONFIRMATION_TYPE)
+		printf("Message send to %s\n",groupname);
+	else
+		printf("%s\n",receive.message);
 }

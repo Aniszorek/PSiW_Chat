@@ -10,6 +10,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -23,6 +24,7 @@
 #define USERNAME_SIZE 16
 #define PASSWORD_SIZE 16
 #define GROUPNAME_SIZE 16
+
 
 #define KEY 2107
 
@@ -63,6 +65,24 @@
 #define GROUP_ERROR_NOT_EXIST_MESSAGE "Group with that name does not exist\n"
 #define GROUP_ERROR_EMPTY_MESSAGE "The group is empty"
 #define GROUP_USERS_CONFIRMATION_MESSAGE "List of users in the group sent"
+
+#define DIRECT_MESSAGE_TYPE 22
+#define DIRECT_MESSAGE_CONFIRMATION_TYPE 23
+#define DIRECT_MESSAGE_RECEIVE_TYPE 24
+#define DIRECT_MESSAGE_USER_NOT_EXISTS 25
+
+
+#define DIRECT_MESSAGE_USER_NOT_EXISTS_MESSAGE "User is not found\n"
+#define DIRECT_MESSAGE_DELIVERED "server has sent a message\n"
+
+#define GROUP_MESSAGE_TYPE 26
+#define GROUP_MESSAGE_GROUP_NOT_EXISTS 31
+#define GROUP_MESSAGE_GROUP_NOT_EXISTS_MESSAGE "Group with specifed name does not exist!\n"
+#define GROUP_MESSAGE_RECEIVE_TYPE 32
+#define GROUP_MESSAGE_CONFIRMATION_TYPE 33
+#define GROUP_MESSAGE_DELIVERED "server has sent a group message\n"
+
+#define NUMBER_OF_MESSAGE_TYPES 30
 
 
 struct msgbuf{
