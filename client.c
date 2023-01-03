@@ -68,7 +68,7 @@ int logIn(int msgId, int childPid){
 
 void communicationLoop(){
 
-    int ppid = getpid();
+    //int ppid = getpid();
 
 	int childPid = fork();
 
@@ -77,18 +77,20 @@ void communicationLoop(){
 		 if(logIn(msgId,childPid)==0)
 		 {
 
-			int id = getpid();
+			//int id = getpid();
 
 			//int childPid = fork();
 			// process doing commands from input
-            printf("Ready to chat.\n");
+            printf("Ready to chat. Enter help to check commands\n");
             while(TRUE){
                 char userInput[MESSAGE_SIZE] = "";
 
                 scanf(" %s", userInput);
                 //printf("%s\n", userInput);
+                if(!strcmp(userInput,"!help"))
+                    printHelp();
 
-                if(strcmp(userInput, "!logout") == 0)
+                else if(strcmp(userInput, "!logout") == 0)
                     logOut(childPid);
 
                 else if(strcmp(userInput, "!ulist") == 0)
@@ -128,11 +130,7 @@ void communicationLoop(){
 					scanf(" %s",userInput);
 					sendGroupMessage(userInput);
 				}
-
-
             }
-
-
 		}
 	}
 	// process receiving message
@@ -186,6 +184,20 @@ void logOut(int childPid){
     exit(0);
 }
 
+void printHelp(){
+    printf("\n\n");
+    printf("Available commands:\n");
+    printf("!help - prints this message\n");
+    printf("!ulist - prints list of users online\n");
+    printf("!glist - prints available groups\n");
+    printf("!guser - prints users in group\n");
+    printf("!gjoin - join to the group\n");
+    printf("!gexit - exit the group\n");
+    printf("!um - messages user\n");
+    printf("!gm - messages group\n");
+    printf("!logout - logout and exit process\n");
+    printf("\n");
+}
 // request for list of all users online
 void requestUsersList(){
     int id = getpid();

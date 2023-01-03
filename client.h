@@ -11,6 +11,7 @@ void requestGroupUsers(char groupName[MESSAGE_SIZE]);
 void printReceivedList(char *message);
 void groupJoin(char groupName[GROUPNAME_SIZE]);
 void groupExit(char groupName[MESSAGE_SIZE]);
+void printHelp();
 
 //sending messages
 void sendDirectMessage(char username[USERNAME_SIZE]);

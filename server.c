@@ -491,7 +491,7 @@ void sendGroupUsers(){
 		else
 			printf("Error message not sent. Error\n");
 
-			return;
+		return;
 	 }
 
 
@@ -509,7 +509,7 @@ void sendGroupUsers(){
 		 }
 	 }
 
-	 char mBuf[MESSAGE_SIZE - USERNAME_SIZE - 1]={"\0"};
+	 //char mBuf[MESSAGE_SIZE - USERNAME_SIZE - 1]={"\0"};
 	 strcpy(send.message,senderUsername);
 	 strcat(send.message,": ");
 	 strcat(send.message,&receive.message[messageStart]);
@@ -617,7 +617,7 @@ void sendGroupMessage()
 		else
 			printf("Error message (group not found) not sent. Error\n");
 
-			return;
+		return;
 	 }
 
 
