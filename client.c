@@ -135,37 +135,33 @@ void communicationLoop(){
 	}
 	// process receiving message
     else{
-            while(TRUE)
+        while(TRUE)
+        {
+            long status;
+			status = msgrcv(msgId, &receive, MESSAGE_SIZE, getpid(), 0);
+
+            if(status>0)
             {
-                long status;
-				status = msgrcv(msgId, &receive, MESSAGE_SIZE, getpid(), 0);
-
-                if(status>0)
+                switch(receive.error)
                 {
-                    switch(receive.error)
+                    case DIRECT_MESSAGE_RECEIVE_TYPE:
                     {
-                        case DIRECT_MESSAGE_RECEIVE_TYPE:
-                        {
-                            printf("%s\n",receive.message);
-                            break;
-                        }
-
-                        case GROUP_MESSAGE_RECEIVE_TYPE:
-                        {
-                            printf("%s\n",receive.message);
-                            break;
-                        }
-
-                        default:
+                        printf("%s\n",receive.message);
                         break;
                     }
+
+                    case GROUP_MESSAGE_RECEIVE_TYPE:
+                    {
+                        printf("%s\n",receive.message);
+                        break;
+                    }
+
+                    default:
+                    break;
                 }
-
             }
-
         }
-
-
+    }
 }
 
 // function to log out user - exitting program
