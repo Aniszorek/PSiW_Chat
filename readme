@@ -1,0 +1,24 @@
+Tu takie podstawowe rzeczy będę zapisywać póki co 
+
+userConfig.txt - w odpowiedniej kolejności: nazwa użytkownika, hasło (id do rozróżnienia 
+    użytkownika to jego PID, nadawany za pomocą serwera)
+chatInfo.h - definicje używane w całym programie, structy wiadomości 
+client.c - póki co wszystko odnośnie do klienta
+client.h - funkcje do klienta
+server.c - wszystko co odnoście do serwera
+server.h - funkcje do servera
+
+trzeba dodać helpa z listą instrukcji, póki co:
+!logout - wylogowanie użytkownika, koniec procesu
+!ulist - lista użytkowników zalogowanych
+!gjoin [nazwa_grupy]- dołączenie do grupy
+!glis - nazwy wszystkich grup
+!guser [nazwa_grupy] - wyświetla użytkowników w danej grupie
+
+funkcje do zrobienia:
+!help - printuje możliwe komendy
+!gm - group message, wysyła wiadomość do grupy
+!um - user message, wysyła wiadomość do użytkownika
+
+odbieranie wiadomości od innych grup i użytkowników 
+będzie współbieżne
