@@ -17,3 +17,12 @@ void printHelp();
 void sendDirectMessage(char username[USERNAME_SIZE]);
 
 void sendGroupMessage(char groupname[GROUPNAME_SIZE]);
+
+
+//mute/unmute
+void showMuted();
+void muteUser(char username[USERNAME_SIZE]);
+void unmuteUser(char username[USERNAME_SIZE]);
+void muteGroup(char groupname[GROUPNAME_SIZE]);
+void unmuteGroup(char groupname[GROUPNAME_SIZE]);
+

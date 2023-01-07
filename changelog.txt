@@ -1,0 +1,23 @@
+wysylanie wiadomosci:
+info z serwera, ze user not logged in po probie wyslania wiadomosci do niezalogowanego uzytkownika
+uniemozliwienie wyslania wiadomosci do siebie
+
+client.c:
+komendy !showmuted !muteuser !unmuteuser !mutegroup !unmutegroup
+
+server.c:
+struktura user: tablice mutedGroupsList/mutedUsersList - inicjalizacja tych tablic w funkcji logInUser
+funkcje showMuted, muteUser, unmuteUser, muteGroup, unmuteGroup
+funkcje sendDirectMessage, sendGroupMessage - dodana obsluga mute
+-update printhelp
+
+
+to do:
+ogarnac chatInfo.h
+blokowanie konta po k probach logowania
+
+
+
+possible changes:
+!ulist tak zeby pokazywal wszystkich uzytkownikow w formacie: username (logged in/ not logged in)
+logi pozostalych funkcji

@@ -71,18 +71,65 @@
 #define DIRECT_MESSAGE_RECEIVE_TYPE 24
 #define DIRECT_MESSAGE_USER_NOT_EXISTS 25
 
-
 #define DIRECT_MESSAGE_USER_NOT_EXISTS_MESSAGE "User is not found\n"
 #define DIRECT_MESSAGE_DELIVERED "server has sent a message\n"
 
 #define GROUP_MESSAGE_TYPE 26
-#define GROUP_MESSAGE_GROUP_NOT_EXISTS 31
+#define GROUP_MESSAGE_GROUP_NOT_EXISTS 41
 #define GROUP_MESSAGE_GROUP_NOT_EXISTS_MESSAGE "Group with specifed name does not exist!\n"
-#define GROUP_MESSAGE_RECEIVE_TYPE 32
-#define GROUP_MESSAGE_CONFIRMATION_TYPE 33
+#define GROUP_MESSAGE_RECEIVE_TYPE 42
+#define GROUP_MESSAGE_CONFIRMATION_TYPE 43
 #define GROUP_MESSAGE_DELIVERED "server has sent a group message\n"
 
-#define NUMBER_OF_MESSAGE_TYPES 30
+#define MUTE_USER_TYPE 27
+#define MUTE_USER_CONFIRMATION_TYPE 44
+#define USER_MUTED_MESSAGE "user has been muted\n"
+#define MUTE_USER_NOT_EXIST 45
+#define MUTE_USER_NOT_EXIST_MESSAGE "user is not found\n"
+#define MUTE_USER_MUTED_ALREADY 46
+#define MUTE_USER_MUTED_ALREADY_MESSAGE "user is muted already\n"
+#define MUTE_USER_CANT_MUTE_SELF 47
+#define MUTE_USER_CANT_MUTE_SELF_MESSAGE "You cannot mute yourself!\n"
+
+#define SHOW_MUTED_TYPE 28
+#define SHOW_MUTED_CONFIRMATION_TYPE 48
+
+#define UNMUTE_USER_TYPE 29
+#define UNMUTE_USER_CONFIRMATION_TYPE 49
+#define USER_UNMUTED_MESSAGE "user has been unmuted\n"
+#define UNMUTE_USER_NOT_EXIST 50
+#define UNMUTE_USER_NOT_EXIST_MESSAGE "user is not found\n"
+#define UNMUTE_USER_CANT_UNMUTE_SELF 51
+#define UNMUTE_USER_CANT_UNMUTE_SELF_MESSAGE "You cannot unmute yourself!\n"
+#define UNMUTE_USER_NOT_MUTED 52
+#define UNMUTE_USER_NOT_MUTED_MESSAGE "This user is not muted!\n"
+
+#define DIRECT_MESSAGE_USER_MUTED 53
+#define DIRECT_MESSAGE_USER_MUTED_MESSAGE "You are being muted by this user, sorry!\n"
+
+#define MUTE_GROUP_TYPE 30
+#define MUTE_GROUP_CONFIRMATION_TYPE 53
+#define GROUP_MUTED_MESSAGE "group has been muted\n"
+#define MUTE_GROUP_NOT_EXIST 54
+#define MUTE_GROUP_NOT_EXIST_MESSAGE "Group with specifed name does not exist!\n"
+#define MUTE_GROUP_MUTED_ALREADY 55
+#define MUTE_GROUP_MUTED_ALREADY_MESSAGE "group is muted already\n"
+
+#define UNMUTE_GROUP_TYPE 31
+#define UNMUTE_GROUP_CONFIRMATION_TYPE 56
+#define GROUP_UNMUTED_MESSAGE "group has been unmuted\n"
+#define UNMUTE_GROUP_NOT_EXIST 57
+#define UNMUTE_GROUP_NOT_EXIST_MESSAGE "Group with specifed name does not exist!\n"
+#define UNMUTE_GROUP_NOT_MUTED 58
+#define UNMUTE_GROUP_NOT_MUTED_MESSAGE "This group is not muted!\n"
+
+
+#define DIRECT_MESSAGE_USER_NOT_LOGGED_IN 59
+#define DIRECT_MESSAGE_USER_NOT_LOGGED_IN_MESSAGE "User is not logged in\n"
+#define DIRECT_MESSAGE_DM_SELF 60
+#define DIRECT_MESSAGE_DM_SELF_MESSAGE "You cannot send a message to yourself!\n"
+
+#define NUMBER_OF_MESSAGE_TYPES 40
 
 
 struct msgbuf{

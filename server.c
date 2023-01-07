@@ -8,6 +8,9 @@ struct User{
 	int sendId;
     int isLogin;
     short incorrectLoginAttempts;
+
+    char mutedUsersList[NUM_OF_USERS][USERNAME_SIZE];
+    char mutedGroupsList[NUM_OF_GROUPS][GROUPNAME_SIZE];
 };
 
 struct Group{
@@ -40,34 +43,72 @@ void servCommunicationLoop(){
         fflush(stdout);
         receiveStatus = msgrcv(msgId, &receive, MESSAGE_SIZE, -NUMBER_OF_MESSAGE_TYPES, 0);
         if(receiveStatus > 0){
-            switch(receive.type){
+            switch(receive.type)
+            {
                 case LOGIN_TYPE:
+                {
                     logInUser();
                     break;
+                }
                 case LOGOUT_TYPE:
+                {
                     logOutUser();
                     break;
+                }
                 case USERS_LIST_TYPE:
+                {
                     sendUsersList();
                     break;
+                }
                 case GROUP_JOIN_REQUEST_TYPE:
-                    addUserToGroup();
+                {    addUserToGroup();
                     break;
+                }
                 case GROUP_LIST_TYPE:
-                    sendGroupList();
-                    break;
+                {    sendGroupList();
+                     break;
+                }
                 case GROUP_EXIT_REQUEST_TYPE:
-                    removeUserFromGroup();
+                {    removeUserFromGroup();
                     break;
+                }
                 case GROUP_USERS_TYPE:
-                    sendGroupUsers();
+                {    sendGroupUsers();
                     break;
-				case DIRECT_MESSAGE_TYPE:
-					sendDirectMessage();
+                }
+                case DIRECT_MESSAGE_TYPE:
+				{	sendDirectMessage();
 					break;
-				case GROUP_MESSAGE_TYPE:
-					sendGroupMessage();
+                }
+                case GROUP_MESSAGE_TYPE:
+				{	sendGroupMessage();
+                    break;
+                }
+                case MUTE_USER_TYPE:
+                {
+                    muteUser();
+                    break;
+                }
+                case UNMUTE_USER_TYPE:
+                {
+                    unmuteUser();
 					break;
+                }
+                case SHOW_MUTED_TYPE:
+                {
+                    showMuted();
+					break;
+                }
+                case MUTE_GROUP_TYPE:
+                {
+                    muteGroup();
+                    break;
+                }
+                case UNMUTE_GROUP_TYPE:
+                {
+                    unmuteGroup();
+                    break;
+                }
             }
         }
     }
@@ -132,6 +173,16 @@ void logInUser(){
 
 			users[i].sendId = receive.receiverId;
 
+            //init muted users/group lists
+            for(int j = 0; j<NUM_OF_USERS;j++)
+            {
+                strcpy(users[i].mutedUsersList[j],EMPTY_STRING);
+            }
+            for(int j = 0; j<NUM_OF_GROUPS;j++)
+            {
+                strcpy(users[i].mutedGroupsList[j],EMPTY_STRING);
+            }
+
             break;
         }
         else if (validation == LOGIN_ERROR) {
@@ -173,6 +224,7 @@ void logInUser(){
         strcpy(send.message, LOGIN_CONFIRMATION_MESSAGE);
         printf("%s (%s)\n\n", LOGIN_CONFIRMATION_MESSAGE, users[userIndex].name);
     }
+
 
     // send information
     send.type = receive.senderId;
@@ -453,14 +505,22 @@ void sendGroupUsers(){
 
  void sendDirectMessage()
  {
+	 //username of a receiver
 	 char username[USERNAME_SIZE]= {"\0"};
 	 int msgSndStatus=0;
-	 int validation = -1;
+	 int validation = -1; //if all ok - stores receicer send id, else stores error id
 	 char buf;
 
      int messageStart=0;
 
-	 //find receiver id by given username
+
+     //find sender username by given id
+	 char senderUsername[USERNAME_SIZE];
+     strcpy(senderUsername,users[getUserIndex(receive.senderId)].name);
+
+	 printf("(DirectMessage) Request from %s\n",senderUsername);
+
+	 //find receiver sendId by given username
 	 for(int i =0;i<=USERNAME_SIZE;i++)
 	 {
 			buf = receive.message[i];
@@ -477,39 +537,120 @@ void sendGroupUsers(){
 	 }
 
 
+	 //check if receiver is logged in
+	 if(validation != USER_NOT_EXISTS)
+     {
+        for(int i = 0; i < NUM_OF_USERS; i++)
+        {
+            if(strcmp(username,users[i].name)==0 && users[i].isLogin == FALSE)
+            {
+                validation = USER_NOT_LOGGED_IN;
+                break;
+            }
+
+        }
+     }
+
+
+     //check if a sender is not muted by the receiver
+     if(validation != USER_NOT_EXISTS && validation != USER_NOT_LOGGED_IN)
+     {
+         //find receiver index
+        int receiverIndex;
+        for(int i = 0; i < NUM_OF_USERS; i++)
+		{
+			if(strcmp(username,users[i].name)==0)
+			{
+				receiverIndex = getUserIndex(users[i].id);
+                break;
+			}
+
+		}
+
+		//check if muted
+        for(int i = 0; i< NUM_OF_USERS; i++)
+        {
+            if(strcmp(users[receiverIndex].mutedUsersList[i], senderUsername)==0)
+            {
+                validation = USER_MUTED;
+				break;
+            }
+        }
+
+     }
+
+
+     //check if a user tries to send a message to self
+     if(strcmp(username,senderUsername) == 0)
+     {
+            validation = DM_SELF_ERROR;
+     }
+
+
 	 //send error response to sender
 	 if(validation == USER_NOT_EXISTS)
 	 {
-			send.type = receive.senderId;
-			send.error = DIRECT_MESSAGE_USER_NOT_EXISTS;
-			strcpy(send.message,DIRECT_MESSAGE_USER_NOT_EXISTS_MESSAGE);
-
+		send.type = receive.senderId;
+		send.error = DIRECT_MESSAGE_USER_NOT_EXISTS;
+		strcpy(send.message,DIRECT_MESSAGE_USER_NOT_EXISTS_MESSAGE);
 		msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
 		if(msgSndStatus!=-1)
-			printf("Error message sent\n\n");
+			printf("(DirectMessage) Error message %d sent to %s\n",USER_NOT_EXISTS,senderUsername);
 		else
-			printf("Error message not sent. Error\n");
+			printf("(DirectMessage) Error message %d not sent to %s. Error\n",USER_NOT_EXISTS,senderUsername);
 
 		return;
 	 }
+     if(validation == USER_NOT_LOGGED_IN)
+	 {
+		send.type = receive.senderId;
+		send.error = DIRECT_MESSAGE_USER_NOT_LOGGED_IN;
+		strcpy(send.message,DIRECT_MESSAGE_USER_NOT_LOGGED_IN_MESSAGE);
+		msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+		if(msgSndStatus!=-1)
+			printf("(DirectMessage) Error message %d sent to %s\n",USER_NOT_LOGGED_IN,senderUsername);
+		else
+			printf("(DirectMessage) Error message %d not sent to %s. Error\n",USER_NOT_LOGGED_IN,senderUsername);
+
+		return;
+	 }
+	 if(validation == USER_MUTED)
+     {
+         send.type = receive.senderId;
+         send.error = DIRECT_MESSAGE_USER_MUTED;
+         strcpy(send.message,DIRECT_MESSAGE_USER_MUTED_MESSAGE);
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+		if(msgSndStatus!=-1)
+			printf("(DirectMessage) Error message %d sent to %s\n",USER_MUTED,senderUsername);
+		else
+			printf("(DirectMessage) Error message %d not sent to %s. Error\n",USER_MUTED,senderUsername);
+
+		 return;
+     }
+     if(validation == DM_SELF_ERROR)
+     {
+         send.type = receive.senderId;
+         send.error = DIRECT_MESSAGE_DM_SELF;
+         strcpy(send.message,DIRECT_MESSAGE_DM_SELF_MESSAGE);
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+		if(msgSndStatus!=-1)
+			printf("(DirectMessage) Error message %d sent to %s\n",DM_SELF_ERROR,senderUsername);
+		else
+			printf("(DirectMessage) Error message %d not sent to %s. Error\n",DM_SELF_ERROR,senderUsername);
+
+		 return;
+     }
+
 
 
 	 //send a message;
 	 send.type = validation;
 	 send.error = DIRECT_MESSAGE_RECEIVE_TYPE;
 
-	 //find sender username by given id
-	 char senderUsername[USERNAME_SIZE];
-	 for(int i = 0;i < NUM_OF_USERS;i++)
-	 {
-		 if(users[i].id == receive.senderId)
-		 {
-			 strcpy(senderUsername,users[i].name);
-		 }
-	 }
-
-	 //char mBuf[MESSAGE_SIZE - USERNAME_SIZE - 1]={"\0"};
 	 strcpy(send.message,senderUsername);
 	 strcat(send.message,": ");
 	 strcat(send.message,&receive.message[messageStart]);
@@ -518,9 +659,9 @@ void sendGroupUsers(){
 	 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
 	 if(msgSndStatus!=-1)
-			printf("Direct message delivered\n\n");
+			printf("(DirectMessage) Delivered from %s to %s\n",senderUsername,username);
 		else
-			printf("Direct message not delivered. Error\n");
+			printf("(DirectMessage) Not delivered from %s to %s. Error\n",senderUsername,username);
 
 	//send a response to sender
 	send.type = receive.senderId;
@@ -530,9 +671,9 @@ void sendGroupUsers(){
 	msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
 	if(msgSndStatus!=-1)
-			printf("Confirmation sent\n\n");
+			printf("(DirectMessage) Confirmation sent to %s\n",senderUsername);
 	else
-			printf("Confirmation not sent. Error\n");
+			printf("(DirectMessage) Confirmation not sent to %s. Error\n",senderUsername);
 
 
 
@@ -541,16 +682,16 @@ void sendGroupUsers(){
  //returns users id or error if user not found
  int checkIfUserExists(char username[USERNAME_SIZE])
  {
-		for(int i = 0; i < NUM_OF_USERS; i++)
-		{
-			if(strcmp(username,users[i].name)==0)
-			{
-				return users[i].sendId;
-			}
+    for(int i = 0; i < NUM_OF_USERS; i++)
+    {
+        if(strcmp(username,users[i].name)==0)
+        {
+            return users[i].sendId;
+        }
 
-		}
+    }
 
-		return USER_NOT_EXISTS;
+    return USER_NOT_EXISTS;
  }
 
 
@@ -558,12 +699,15 @@ void sendGroupMessage()
 {
 	 char groupName[GROUPNAME_SIZE]= {"\0"};
 	 int msgSndStatus=0;
-	 int validation = GROUP_NOT_EXISTS;
+	 int validation = GROUP_NOT_EXISTS; //set to TRUE if all ok, else set to error code
 	 char buf;
 
+	 //username of sender
 	 char username[USERNAME_SIZE] = {"\0"};
 
      int messageStart=0;
+
+     int groupIsMuted = FALSE;
 
 	 //find group name
 	 for(int i =0;i<=GROUPNAME_SIZE;i++)
@@ -580,14 +724,13 @@ void sendGroupMessage()
 			}
 	 }
 
-	 printf("%s\n",groupName);
+	 //printf("%s\n",groupName);
 
 
 	//find sender name
 	strcpy(username,users[getUserIndex(receive.senderId)].name);
 
-
-     printf("%s\n",username);
+	printf("(GroupMessage) Request from %s\n",username);
 
 	struct Group* g;
 
@@ -606,16 +749,15 @@ void sendGroupMessage()
 	 //send error response to sender
 	 if(validation == GROUP_NOT_EXISTS)
 	 {
-			send.type = receive.senderId;
-			send.error = GROUP_MESSAGE_GROUP_NOT_EXISTS;
-			strcpy(send.message,GROUP_MESSAGE_GROUP_NOT_EXISTS_MESSAGE);
-
+		send.type = receive.senderId;
+		send.error = GROUP_MESSAGE_GROUP_NOT_EXISTS;
+		strcpy(send.message,GROUP_MESSAGE_GROUP_NOT_EXISTS_MESSAGE);
 		msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
 		if(msgSndStatus!=-1)
-			printf("Error message (group not found)  sent\n\n");
+			printf("(GroupMessage) Error message %d sent to %s\n",GROUP_NOT_EXISTS,username);
 		else
-			printf("Error message (group not found) not sent. Error\n");
+			printf("(GroupMessage) Error message $d not sent to %s. Error\n",GROUP_NOT_EXISTS,username);
 
 		return;
 	 }
@@ -624,8 +766,24 @@ void sendGroupMessage()
 	 //send a message;
 	 for(int i = 0; i < g->usersInGroup; i++)
 	 {
+         groupIsMuted = FALSE;
 		 send.type = g->users[i]->sendId;
 		 send.error = GROUP_MESSAGE_RECEIVE_TYPE;
+
+         //check if this group is muted by this user
+         for(int j=0; j<NUM_OF_GROUPS;j++)
+         {
+           if(strcmp(g->users[i]->mutedGroupsList[j],groupName) == 0)
+           {
+                groupIsMuted = TRUE;
+				break;
+           }
+         }
+
+         if(groupIsMuted)
+         {
+                continue;
+         }
 
 		 strcpy(send.message,groupName);
 		 strcat(send.message,": ");
@@ -636,9 +794,9 @@ void sendGroupMessage()
 		 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
 		 if(msgSndStatus!=-1)
-				printf("Direct message delivered\n\n");
+				printf("(GroupMessage) (%s) message from %s delivered to group member %s\n",groupName,username,g->users[i]->name);
 		 else
-				printf("Direct message not delivered. Error\n");
+				printf("(GroupMessage) (%s) message from %s not delivered to group member %s. Error\n\n",groupName,username,g->users[i]->name);
 	 }
 
 
@@ -651,7 +809,506 @@ void sendGroupMessage()
 	msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
 	if(msgSndStatus!=-1)
-			printf("Confirmation sent\n\n");
+			printf("(GroupMessage) (%s) Confirmation sent to %s\n",groupName,username);
 	else
-			printf("Confirmation not sent. Error\n");
+			printf("(GroupMessage) (%s) Confirmation not sent to %s. Error\n",groupName,username);
 }
+
+void showMuted()
+{
+     int userindex = getUserIndex(receive.senderId);
+     int msgSndStatus=0;
+
+     char msg[MESSAGE_SIZE];
+
+ 	 printf("(ShowMuted) Request from %s\n",users[userindex].name);
+
+     strcpy(msg,EMPTY_STRING);
+     strcpy(msg,"Users:\n");
+
+     //add muted users to message
+     sortMutedUserames(userindex);
+     for(int i = 0; i < NUM_OF_USERS;i++)
+     {
+        if(strcmp(users[userindex].mutedUsersList[i],EMPTY_STRING) !=0)
+        {
+            strcat(msg,users[userindex].mutedUsersList[i]);
+            strcat(msg,"\n");
+        }
+     }
+
+     strcat(msg,"Groups:\n");
+     //add muted groups to message:
+     sortMutedGroupnames(userindex);
+     for(int i = 0; i < NUM_OF_GROUPS;i++)
+     {
+        if(strcmp(users[userindex].mutedGroupsList[i],EMPTY_STRING) !=0)
+        {
+            strcat(msg,users[userindex].mutedGroupsList[i]);
+            strcat(msg,"\n");
+        }
+     }
+
+     //send response
+     send.type = receive.senderId;
+	 send.error = SHOW_MUTED_CONFIRMATION_TYPE;
+	 strcpy(send.message,msg);
+
+	 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+	 if(msgSndStatus!=-1)
+	 		printf("(ShowMuted) Confirmation sent to %s\n",users[userindex].name);
+	 else
+			printf("(ShowMuted) Confirmation not sent to %s. Error\n",users[userindex].name);
+
+
+}
+
+void muteUser()
+{
+	 //username to mute
+     char username[USERNAME_SIZE];
+     int userindex = getUserIndex(receive.senderId);
+     int msgSndStatus=0;
+	 int validation = -1; //stores error code
+
+
+	 printf("(MuteUser) Request from %s\n",users[userindex].name);
+
+     strcpy(username, receive.message);
+
+     //check if user exists
+     validation = checkIfUserExists(username);
+
+     //check if user is not muted already
+     if(validation != USER_NOT_EXISTS)
+     {
+        for(int i =0; i<NUM_OF_USERS;i++)
+        {
+            if(strcmp(users[userindex].mutedUsersList[i], username) == 0)
+            {
+               validation = USER_MUTED_ALREADY;
+            }
+        }
+     }
+
+     //check for self mute
+     if(validation != USER_NOT_EXISTS && validation != USER_MUTED_ALREADY)
+     {
+            if(strcmp(username, users[userindex].name)== 0)
+            {
+                validation = MUTE_SELF_ERROR;
+            }
+     }
+
+	 //send error message
+     if(validation == USER_NOT_EXISTS)
+     {
+            //send error message user not exist
+            send.type = receive.senderId;
+			send.error = MUTE_USER_NOT_EXIST;
+			strcpy(send.message,MUTE_USER_NOT_EXIST_MESSAGE);
+
+            msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(MuteUser) Error message %d sent to %s\n",USER_NOT_EXISTS,users[userindex].name);
+            else
+                printf("(MuteUser) Error message %d not sent to %s. Error\n",USER_NOT_EXISTS,users[userindex].name);
+            return;
+     }
+     if(validation == USER_MUTED_ALREADY)
+     {
+         //send error message user muted already
+         send.type = receive.senderId;
+         send.error = MUTE_USER_MUTED_ALREADY;
+         strcpy(send.message,MUTE_USER_MUTED_ALREADY_MESSAGE);
+
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(MuteUser) Error message %d sent to %s\n",USER_MUTED_ALREADY,users[userindex].name);
+            else
+                printf("(MuteUser) Error message %d not sent to %s. Error\n",USER_MUTED_ALREADY,users[userindex].name);
+         return;
+     }
+     if(validation == MUTE_SELF_ERROR)
+     {
+         //send error message cant mute self
+         send.type = receive.senderId;
+         send.error = MUTE_USER_CANT_MUTE_SELF;
+         strcpy(send.message,MUTE_USER_CANT_MUTE_SELF_MESSAGE);
+
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(MuteUser) Error message %d sent to %s\n",MUTE_SELF_ERROR,users[userindex].name);
+            else
+                printf("(MuteUser) Error message %d not sent to %s. Error\n",MUTE_SELF_ERROR,users[userindex].name);
+         return;
+     }
+
+
+     //everything ok, mute user
+     //find free space in mutedUsersList array
+     for(int i =0; i<NUM_OF_USERS;i++)
+     {
+            if(strcmp(users[userindex].mutedUsersList[i],EMPTY_STRING) == 0)
+            {
+                strcpy(users[userindex].mutedUsersList[i],username);
+                break;
+            }
+     }
+
+
+
+
+     //send confirmation message
+     send.type = receive.senderId;
+	 send.error = MUTE_USER_CONFIRMATION_TYPE;
+	 strcpy(send.message,USER_MUTED_MESSAGE);
+
+	 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+	 if(msgSndStatus!=-1)
+	 		printf("(MuteUser) Confirmation sent to %s\n",users[userindex].name);
+	 else
+			printf("(MuteUser) Confirmation not sent to $s. Error\n",users[userindex].name);
+}
+
+
+void unmuteUser()
+{
+	 //username to unmute
+     char username[USERNAME_SIZE];
+     int userindex = getUserIndex(receive.senderId);
+     int msgSndStatus=0;
+	 int validation = -1; //stores error code
+
+	 printf("(UnmuteUser) Request from %s\n",users[userindex].name);
+
+     strcpy(username, receive.message);
+
+     //check if user exists
+     validation = checkIfUserExists(username);
+
+    //check if user is muted
+     if(validation != USER_NOT_EXISTS)
+     {
+        for(int i =0; i<NUM_OF_USERS;i++)
+        {
+            if(strcmp(users[userindex].mutedUsersList[i], username) == 0)
+            {
+               validation = USER_MUTED_ALREADY;
+               break;
+            }
+        }
+     }
+
+     //check for self unmute
+     if(validation != USER_NOT_EXISTS && validation != USER_MUTED_ALREADY)
+     {
+            if(strcmp(username, users[userindex].name)== 0)
+            {
+                validation = MUTE_SELF_ERROR;
+            }
+     }
+
+
+     if(validation == USER_NOT_EXISTS)
+     {
+            //send error message user not exist
+            send.type = receive.senderId;
+			send.error = UNMUTE_USER_NOT_EXIST;
+			strcpy(send.message,UNMUTE_USER_NOT_EXIST_MESSAGE);
+
+            msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(UnmuteUser) Error message %d sent to $s\n",USER_NOT_EXISTS,users[userindex].name);
+            else
+                printf("(UnmuteUser) Error message %d not sent to $s. Error\n",USER_NOT_EXISTS,users[userindex].name);
+            return;
+     }
+
+     if(validation == MUTE_SELF_ERROR)
+     {
+         //send error message cant unmute self
+         send.type = receive.senderId;
+         send.error = UNMUTE_USER_CANT_UNMUTE_SELF;
+         strcpy(send.message,UNMUTE_USER_CANT_UNMUTE_SELF_MESSAGE);
+
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(UnmuteUser) Error message %d sent to $s\n",MUTE_SELF_ERROR,users[userindex].name);
+            else
+                printf("(UnmuteUser) Error message %d not sent to $s. Error\n",MUTE_SELF_ERROR,users[userindex].name);
+         return;
+     }
+
+     if(validation != USER_MUTED_ALREADY)
+     {
+         //send error message user is not muted
+         send.type = receive.senderId;
+         send.error = UNMUTE_USER_NOT_MUTED;
+         strcpy(send.message,UNMUTE_USER_NOT_MUTED_MESSAGE);
+
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(UnmuteUser) Error message %d sent to $s\n",USER_MUTED_ALREADY,users[userindex].name);
+            else
+                printf("(UnmuteUser) Error message %d not sent to $s. Error\n",USER_MUTED_ALREADY,users[userindex].name);
+         return;
+     }
+
+
+    //user is found and is muted - unmute
+    for(int i =0; i<NUM_OF_USERS;i++)
+     {
+            if(strcmp(users[userindex].mutedUsersList[i],username) == 0)
+            {
+                strcpy(users[userindex].mutedUsersList[i],EMPTY_STRING);
+                break;
+            }
+     }
+
+     //send confirmation message
+     send.type = receive.senderId;
+	 send.error = UNMUTE_USER_CONFIRMATION_TYPE;
+	 strcpy(send.message,USER_UNMUTED_MESSAGE);
+
+	 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+	 if(msgSndStatus!=-1)
+	 		printf("(UnmuteUser) Confirmation sent to %s\n",users[userindex].name);
+	 else
+			printf("(UnmuteUser) Confirmation not sent to %s. Error\n",users[userindex].name);
+
+
+}
+
+void muteGroup()
+{
+	 //groupname to be muted
+     char groupname[GROUPNAME_SIZE];
+     int userindex = getUserIndex(receive.senderId);
+     int msgSndStatus=0;
+	 int validation = GROUP_NOT_EXISTS; //stores error code
+
+
+ 	 printf("(MuteGroup) Request from %s\n",users[userindex].name);
+
+     strcpy(groupname, receive.message);
+
+     //check if group exists
+    for(int i = 0; i < NUM_OF_GROUPS; i++)
+	{
+		if(strcmp(groups[i].name,groupname) ==0)
+		{
+			validation = TRUE;
+		}
+	}
+
+     //check if group is not muted already
+     if(validation == TRUE)
+     {
+        for(int i =0; i<NUM_OF_GROUPS;i++)
+        {
+            if(strcmp(users[userindex].mutedGroupsList[i], groupname) == 0)
+            {
+               validation = GROUP_MUTED_ALREADY;
+            }
+        }
+     }
+
+	 //send error message
+     if(validation == GROUP_NOT_EXISTS)
+     {
+            //send error message group not exist
+            send.type = receive.senderId;
+			send.error = MUTE_GROUP_NOT_EXIST;
+			strcpy(send.message,MUTE_GROUP_NOT_EXIST_MESSAGE);
+
+            msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(MuteGroup) Error message %d sent to %s\n",GROUP_NOT_EXISTS,users[userindex].name);
+            else
+                printf("(MuteGroup) Error message %d not sent to %s. Error\n",GROUP_NOT_EXISTS,users[userindex].name);
+            return;
+     }
+     if(validation == GROUP_MUTED_ALREADY)
+     {
+         //send error message group muted already
+         send.type = receive.senderId;
+         send.error = MUTE_GROUP_MUTED_ALREADY;
+         strcpy(send.message,MUTE_GROUP_MUTED_ALREADY_MESSAGE);
+
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(MuteGroup) Error message %d sent to %s\n",GROUP_MUTED_ALREADY,users[userindex].name);
+            else
+                printf("(MuteGroup) Error message %d not sent to %s. Error\n",GROUP_MUTED_ALREADY,users[userindex].name);
+         return;
+     }
+
+
+     //everything ok, mute group
+     //find free space in mutedGroupsList array
+     for(int i =0; i<NUM_OF_GROUPS;i++)
+     {
+            if(strcmp(users[userindex].mutedGroupsList[i],EMPTY_STRING) == 0)
+            {
+                strcpy(users[userindex].mutedGroupsList[i],groupname);
+                break;
+            }
+     }
+
+
+
+
+     //send confirmation message
+     send.type = receive.senderId;
+	 send.error = MUTE_GROUP_CONFIRMATION_TYPE;
+	 strcpy(send.message,GROUP_MUTED_MESSAGE);
+
+	 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+	 if(msgSndStatus!=-1)
+	 		printf("(MuteGroup) Confirmation sent to %s\n",users[userindex].name);
+	 else
+			printf("(MuteGroup) Confirmation not sent to %s. Error\n",users[userindex].name);
+
+}
+
+void unmuteGroup()
+{
+	 //group to be unmuted
+     char groupname[USERNAME_SIZE];
+     int userindex = getUserIndex(receive.senderId);
+     int msgSndStatus=0;
+	 int validation = GROUP_NOT_EXISTS; //stores error code
+
+	 printf("(UnmuteGroup) Request from %s\n",users[userindex].name);
+
+     strcpy(groupname, receive.message);
+
+     //check if group exists
+    for(int i = 0; i < NUM_OF_GROUPS; i++)
+	{
+		if(strcmp(groups[i].name,groupname) ==0)
+		{
+			validation = TRUE;
+		}
+	}
+
+    //check if group is muted
+     if(validation == TRUE)
+     {
+        for(int i =0; i<NUM_OF_GROUPS;i++)
+        {
+            if(strcmp(users[userindex].mutedGroupsList[i], groupname) == 0)
+            {
+               validation = GROUP_MUTED_ALREADY;
+            }
+        }
+     }
+
+	 //send error message
+     if(validation == GROUP_NOT_EXISTS)
+     {
+            //send error message group not exist
+            send.type = receive.senderId;
+			send.error = UNMUTE_GROUP_NOT_EXIST;
+			strcpy(send.message,UNMUTE_GROUP_NOT_EXIST_MESSAGE);
+
+            msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(UnmuteGroup) Error message %d sent to %s\n",GROUP_NOT_EXISTS,users[userindex].name);
+            else
+                printf("(UnmuteGroup) Error message %d not sent to %s. Error\n",GROUP_NOT_EXISTS,users[userindex].name);
+            return;
+     }
+
+     if(validation != GROUP_MUTED_ALREADY)
+     {
+         //send error message group is not muted
+         send.type = receive.senderId;
+         send.error = UNMUTE_GROUP_NOT_MUTED;
+         strcpy(send.message,UNMUTE_GROUP_NOT_MUTED_MESSAGE);
+
+         msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+            if(msgSndStatus!=-1)
+                printf("(UnmuteGroup) Error message %d sent to %s\n",GROUP_MUTED_ALREADY,users[userindex].name);
+            else
+                printf("(UnmuteGroup) Error message %d not sent to %s. Error\n",GROUP_MUTED_ALREADY,users[userindex].name);
+         return;
+     }
+
+
+    //group is found and is muted - unmute
+    for(int i =0; i<NUM_OF_GROUPS;i++)
+     {
+            if(strcmp(users[userindex].mutedGroupsList[i],groupname) == 0)
+            {
+                strcpy(users[userindex].mutedGroupsList[i],EMPTY_STRING);
+                break;
+            }
+     }
+
+     //send confirmation message
+     send.type = receive.senderId;
+	 send.error = UNMUTE_GROUP_CONFIRMATION_TYPE;
+	 strcpy(send.message,GROUP_UNMUTED_MESSAGE);
+
+	 msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
+
+	 if(msgSndStatus!=-1)
+	 		printf("(UnmuteGroup) Confirmation sent to %s\n",users[userindex].name);
+	 else
+			printf("(UnmuteGroup) Confirmation not sent to %s. Error\n", users[userindex].name);
+
+
+}
+
+void sortMutedUserames(int userindex)
+{
+    char tmp[USERNAME_SIZE];
+    for(int i=0; i < NUM_OF_USERS; i++)
+    {
+        for(int j = i+1; j < NUM_OF_USERS; j++)
+        {
+            if(strcmp(users[userindex].mutedUsersList[i],users[userindex].mutedUsersList[j]) >0)
+            {
+                strcpy(tmp,users[userindex].mutedUsersList[i]);
+                strcpy(users[userindex].mutedUsersList[i],users[userindex].mutedUsersList[j]);
+                strcpy(users[userindex].mutedUsersList[j],tmp);
+            }
+        }
+    }
+}
+
+
+void sortMutedGroupnames(int userindex)
+{
+    char tmp[GROUPNAME_SIZE];
+    for(int i=0; i < NUM_OF_GROUPS; i++)
+    {
+        for(int j = i+1; j < NUM_OF_GROUPS; j++)
+        {
+            if(strcmp(users[userindex].mutedGroupsList[i],users[userindex].mutedGroupsList[j]) >0)
+            {
+                strcpy(tmp,users[userindex].mutedGroupsList[i]);
+                strcpy(users[userindex].mutedGroupsList[i],users[userindex].mutedGroupsList[j]);
+                strcpy(users[userindex].mutedGroupsList[j],tmp);
+            }
+        }
+    }
+}
+
+
