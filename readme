@@ -1,21 +1,35 @@
-Tu takie podstawowe rzeczy będę zapisywać póki co 
+PSiW Projekt - Chat
+Projekt działa na linuxie z zainstalowanym gcc 12.2.0
 
-userConfig.txt - w odpowiedniej kolejności: nazwa użytkownika, hasło (id do rozróżnienia 
-    użytkownika to jego PID, nadawany za pomocą serwera)
-chatInfo.h - definicje używane w całym programie, structy wiadomości 
-client.c - póki co wszystko odnośnie do klienta
-client.h - funkcje do klienta
-server.c - wszystko co odnoście do serwera
-server.h - funkcje do servera
+Instrukcja kompilacji:
+1. W folderze, w którym znajdują się pliki otworzyć terminal.
+2. Wpisać w terminalu komendę: "make all"
 
-trzeba dodać helpa z listą instrukcji, póki co:
-!logout - wylogowanie użytkownika, koniec procesu
-!ulist - lista użytkowników zalogowanych
-!gjoin [nazwa_grupy]- dołączenie do grupy
-!glis - nazwy wszystkich grup
-!guser [nazwa_grupy] - wyświetla użytkowników w danej grupie
-!help - printuje możliwe komendy
-!gm - group message, wysyła wiadomość do grupy
-!um - user message, wysyła wiadomość do użytkownika
+Instrukcja uruchomienia:
+1. W folderze, w którym znajdują się pliki uruchomić minimum dwa terminale.
+2. W jednym terminalu wpisać komendę: "./server".
+3. W każdym kolejnym terminalu używać komendy: "./client".
+4. Po zalogowaniu się za pomocą nazwy użytkownika i hasła, można 
+    wyświetlić wszystkie dostępne komendy za pomocą komendy "!help".
+    Nazwy i hasła użytkowników znajdują się w pliku userConfig.txt.
 
+userConfig.txt - zawiera nazwy i hasła użytkowników, a także nazwy wszystkich
+    grup
 
+client.c - zawiera wszystkie funkcje ważne po stronie klienta.
+    W tym między innymi funkcję do logowania i wylogowywania użytkownika,
+    dołączania go do grupy, wysyłania wiadomości do użytkowników
+    lub grup, blokowanie użytkowników i grup, a także współbieżne
+    odbieranie wiadomości.
+
+server.c - zawiera wszystkie funkcje ważne po stronie servera.
+    W tym między innymi funkcje, które umożliwiają wykonanie czynności
+    zlecanych przez użytkownika - tych wymienionych w powyższym punkcie.
+    Zawiera także strukturę użytkownika i grupy.
+
+client.h, server.h - definicje poszczególnych funkcji używanych w konkretnych 
+    procesach, zdefiniowane wartości stałe przydatne w programie.
+    
+chatInfo.h - wszystkie dołączone biblioteki, zdefiniowane stałe używane
+    w obydwu programach (client.c i server.c), struktura przekazywanej
+    wiadomości.
