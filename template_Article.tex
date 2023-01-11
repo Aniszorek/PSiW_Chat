@@ -86,13 +86,13 @@
 	Użytkownik wprowadza nazwę użytkownika i hasło, które zostaje przesłane w formie\\ username;password. Serwer po otrzymaniu wiadomości sprawdza czy istnieje taki użytkownik (na podstawie danych odczytanych wcześniej z pliku), następnie sprawdza czy hasło jest poprawne, a także czy użytkownik nie jest już zalogowany, i czy nie przekroczył dostępnych prób logowania. Serwer odsyła zaistniały błąd lub potwierdzenie zalogowania.\\
 	\textbf{Wymagane: long type, int senderId (PID), receiverId (child PID), message}
 	\subsubsection{Lista użytkowników}
-	Do serwera przesyłana zostaje informacja z ID użytkownika i typem zapytania. Serwer odsyła informację w formie user1;user2;...;usern co wyświetlane jest u użytkownika.\\
+	Do serwera przesyłana zostaje informacja z ID użytkownika i typem zapytania. Serwer odsyła informację w formie user1;user2;...;usern co wyświetlane jest u użytkownika w odpowiedniej formie.\\
 	\textbf{Wymagane: long type, int senderId (PID)}
 	\subsubsection{Dostępne grupy}
-	Do serwera przesyłana zostaje informacja z ID użytkownika i typem zapytania. Serwer odsyła informację w formie group1;group2;...;groupn co wyświetlane jest u użytkownika.\\
+	Do serwera przesyłana zostaje informacja z ID użytkownika i typem zapytania. Serwer odsyła informację w formie group1;group2;...;groupn co wyświetlane jest u użytkownika w odpowiedniej formie.\\
 	\textbf{Wymagane: long type, int senderId (PID)}
 	\subsubsection{Użytkownicy danej grupy}
-	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer odsyła informację w formie user1;user2;...;usern co wyświetlane jest u użytkownika.\\
+	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer odsyła informację w formie user1;user2;...;usern co wyświetlane jest u użytkownika w odpowiedniej formie.\\
 	\textbf{Wymagane: long type, int senderId, char message[1024]}
 	\subsubsection{Dołączanie do grupy}
 	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer odsyła zaisniały błąd lub potwierdzenie dołączenia użytkownika.
