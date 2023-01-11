@@ -77,7 +77,7 @@ void communicationLoop(){
 		 {
 
 			// process doing commands from input
-            printf("Ready to chat. Enter help to check commands\n");
+            printf("Ready to chat. Enter !help to check commands\n");
             while(TRUE){
                 char userInput[MESSAGE_SIZE] = "";
 
