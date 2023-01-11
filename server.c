@@ -437,7 +437,7 @@ void removeUserFromGroup(){
     else if((groupIndex=getGroupIndex(receive.message)) < 0){
         send.error = GROUP_EXIT_ERROR_NAME_TYPE;
         strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
-        printf("%s(%s want exit from %s)\n\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
+        printf("%s (%s want exit from %s)\n\n",GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name,
                             groups[groupIndex].name);
     }
@@ -445,16 +445,17 @@ void removeUserFromGroup(){
     else if((userInGroupIndex = isAlreadyInGroup(groupIndex,userIndex))<0){
         send.error = GROUP_EXIT_ERROR_USER_OUT_GROUP_TYPE;
         strcpy(send.message, GROUP_EXIT_ERROR_MESSAGE2);
-        printf("%s(%s want exit from %s)\n\n",GROUP_EXIT_ERROR_MESSAGE2,
+        printf("%s (%s want exit from %s)\n\n",GROUP_EXIT_ERROR_MESSAGE2,
                             users[userIndex].name,
                             groups[groupIndex].name);
     }
     // exits group
     else{
         groups[groupIndex].users[userInGroupIndex] = NULL;
+        groups[groupIndex].usersInGroup--;
         send.error = GROUP_EXIT_CONFIRMATION_TYPE;
         strcpy(send.message, GROUP_EXIT_CONFIRMATION_MESSAGE);
-        printf("%s(%s from %s)\n\n",GROUP_EXIT_CONFIRMATION_MESSAGE,
+        printf("%s (%s from %s)\n\n",GROUP_EXIT_CONFIRMATION_MESSAGE,
                             users[userIndex].name,
                             groups[groupIndex].name);
     }
@@ -472,14 +473,14 @@ void sendGroupUsers(){
     if(groupIndex < 0){
         send.error =  GROUP_USERS_ERROR_NAME_TYPE;
         strcpy(send.message, GROUP_ERROR_NOT_EXIST_MESSAGE);
-        printf("%s(%s want to print users of group)\n\n",
+        printf("%s (%s want to print users of group)\n\n",
                             GROUP_ERROR_NOT_EXIST_MESSAGE,
                             users[userIndex].name);
     }
     else if(groups[groupIndex].usersInGroup==0){
         send.error =  GROUP_ERROR_EMPTY_TYPE;
         strcpy(send.message, GROUP_ERROR_EMPTY_MESSAGE);
-        printf("%s(%s want to print users of %s)\n\n",
+        printf("%s (%s want to print users of %s)\n\n",
                             GROUP_ERROR_EMPTY_MESSAGE,
                             users[userIndex].name,
                             groups[groupIndex].name);
@@ -495,11 +496,6 @@ void sendGroupUsers(){
     }
 
     int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
-
-    if(msgSndStatus!=-1)
-        printf("Groups list sended\n\n");
-    else
-        printf("Groups list not sended. Error\n");
 }
 
 
