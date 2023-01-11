@@ -1,0 +1,121 @@
+\documentclass[11pt]{article}
+\usepackage{lmodern,setspace,amsmath,amssymb,amsfonts,amsthm,graphicx,multicol,grffile,float}
+\usepackage[a4paper, top=0.9in, bottom=1.05in, left=1.05in, right=1.05in]{geometry}
+\usepackage[polish]{babel}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{mGreen}{rgb}{0,0.6,0}
+\definecolor{mGray}{rgb}{0.5,0.5,0.5}
+\definecolor{mPurple}{rgb}{0.58,0,0.82}
+\definecolor{backgroundColour}{rgb}{0.95,0.95,0.92}
+
+\title{PSiW - Protokół}
+\author{Anna Ogorzałek 151805 \and TTT TTTT TTt}
+\date{}
+
+
+\lstdefinestyle{CStyle}{
+	backgroundcolor=\color{backgroundColour},   
+	commentstyle=\color{mGreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{mGray},
+	stringstyle=\color{mPurple},
+	basicstyle=\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2,
+	language=C
+}
+
+\begin{document}
+	\maketitle
+	\section{Komunikacja między serwerem i klientem}
+	\subsection{Wstęp}
+	Cały komunikacja opiera się wyłącznie na jednej kolejce komunikatów IPC. Klucz jest stałą dostępną dla wszystkich programów. Serwer oczekuje na jakiekolwiek wiadomości, natomiast wysyłając komunikaty do użytkownika, przypisuje do typu konkretne ID użytkownika - czyli PID procesu. Użytkownik odbiera wiadomości oczekując na wiadomość z jego ID.
+	\subsection{Polecenia}
+	Przy włączeniu programu, jedyne co może zrobić użytkownik to wprowadzenie nazwy użytkownika i hasła w celu zalogowania się. Komendy z których mogą korzystać użytkownicy, dostępne są dopiero po zalogowaniu się na konto. W celu ich wyświetlenia można użyć komendy: "!help"\\
+	Wykonanie każdego polecenia wymaga rozróżnienia tych poleceń przez serwer, dlatego każde żądanie ze strony użytkownika jest wysyłane z konkretnym typem, dla każdego z poleceń.\\\\ Komendy razem z funkcjonalnością i typem:
+	
+\begin{table}[!ht]
+	\centering
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\textbf{polecenie} & \textbf{funkcja} & \textbf{typ} \\ \hline
+		----- & loguje użytkownika & LOGIN\_TYPE \\ \hline
+		!help & wyświetla dostępne komendy & brak \\ \hline
+		!ulist & wyświetla listę zalogowanych użytkowników & USERS\_LIST\_TYPE \\ \hline
+		!glist & wyświetla dostępne grupy & GROUP\_LIST\_TYPE \\ \hline
+		!guser & wyświetla użytkowników w danej grupie & GROUP\_LIST\_TYPE \\ \hline
+		!gjoin & pozwala na dołączenie do danej grupy & GROUP\_JOIN\_TYPE \\ \hline
+		!gexit & pozwala na opuszczenie danej grupy & GROUP\_EXIT\_TYPE \\ \hline
+		!dm & wysyła wiadomość do danego użytkownika& DIRECT\_MESSAGE\_TYPE \\ \hline
+		!gm & wysyła wiadomość do grupy & GROUP\_MESSAGE\_TYPE \\ \hline
+		!muteuser & blokuje konkretnego użytkownika & MUTE\_USER\_TYPE \\ \hline
+		!unmuteuser & odblokowuje użytkownika & UNMUTE\_USER\_TYPE \\ \hline
+		!mutegroup & blokuje konkretną grupę & MUTE\_GROUP\_TYPE \\ \hline
+		!unmutegroup & odblokowuje grupę & UNMUTE\_GROUP\_TYPE \\ \hline
+		!logout & wylogowuje użytkownika i wyłącza program & LOGOUT\_TYPE\\ \hline
+	\end{tabular}
+\end{table}
+\pagebreak
+	\subsection{Komunikacja}
+	Struktura przekazywanych komunikatów jest następująca:
+		\begin{lstlisting}[style = CStyle]
+		struct msgbuf{
+			long type;
+			int error;
+			int receiverId;
+			int senderId;
+			char message[1024];
+		};\end{lstlisting}
+	za jej pomocą przekazywane są wszystkie informacje pomiędzy użytkownikiem a serwerem.
+	
+	\subsubsection{Logowanie}
+	Użytkownik wprowadza nazwę użytkownika i hasło, które zostaje przesłane w formie\\ username;password. Serwer po otrzymaniu wiadomości sprawdza czy istnieje taki użytkownik (na podstawie danych odczytanych wcześniej z pliku), następnie sprawdza czy hasło jest poprawne, a także czy użytkownik nie jest już zalogowany, i czy nie przekroczył dostępnych prób logowania. Serwer odsyła zaistniały błąd lub potwierdzenie zalogowania.\\
+	\textbf{Wymagane: long type, int senderId (PID), receiverId (child PID), message}
+	\subsubsection{Lista użytkowników}
+	Do serwera przesyłana zostaje informacja z ID użytkownika i typem zapytania. Serwer odsyła informację w formie user1;user2;...;usern co wyświetlane jest u użytkownika.\\
+	\textbf{Wymagane: long type, int senderId (PID)}
+	\subsubsection{Dostępne grupy}
+	Do serwera przesyłana zostaje informacja z ID użytkownika i typem zapytania. Serwer odsyła informację w formie group1;group2;...;groupn co wyświetlane jest u użytkownika.\\
+	\textbf{Wymagane: long type, int senderId (PID)}
+	\subsubsection{Użytkownicy danej grupy}
+	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer odsyła informację w formie user1;user2;...;usern co wyświetlane jest u użytkownika.\\
+	\textbf{Wymagane: long type, int senderId, char message[1024]}
+	\subsubsection{Dołączanie do grupy}
+	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer odsyła zaisniały błąd lub potwierdzenie dołączenia użytkownika.
+	\textbf{Wymagane: long type, int senderId, char message[1024]}
+	\subsubsection{Opuszczanie grupy}
+	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer odsyła zaistniały błąd lub potwierdzenie usunięcia użytkownika z grupy.
+	\textbf{Wymagane: long type, int senderId, char message[1024]}
+	\subsubsection{Wysyłanie wiadomości}
+	\textbf{Wymagane:}
+	\subsubsection{Wysyłanie wiadomości do grupy}
+	\textbf{Wymagane:}
+	\subsubsection{Blokowanie użytkownika}
+	\textbf{Wymagane:}
+	\subsubsection{Odblokowanie użytkownika}
+	\textbf{Wymagane:}
+	\subsubsection{Blokowanie grupy}
+	\textbf{Wymagane:}
+	\subsubsection{Odblokowanie grupy}
+	\textbf{Wymagane:}
+	\subsubsection{Wylogowanie użytkownika}
+	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer usuwa użytkownika z aktywnych użytkowników i wysyła potwierdzenie wykonania żądania.
+	\textbf{Wymagane: long type, int senderId}
+	
+
+
+\end{document}
