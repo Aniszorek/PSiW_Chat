@@ -1,4 +1,4 @@
-#include "client.h"
+#include "inf151805_inf151891_k.h"
 
 struct msgbuf send, receive;
 int msgId;

@@ -1,4 +1,4 @@
-#include "server.h"
+#include "inf151805_inf151891_s.h"
 
 
 struct User{
@@ -493,11 +493,12 @@ void sendGroupUsers(){
             strcat(send.message, groups[groupIndex].users[i]->name);
             strcat(send.message, ";");
         }
+        printf("%s (%s want to print users of %s)\n\n",
+                            GROUP_USERS_CONFIRMATION_MESSAGE,
+                            users[userIndex].name,
+                            groups[groupIndex].name);
     }
-
-    int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 }
-
 
  void sendDirectMessage()
  {

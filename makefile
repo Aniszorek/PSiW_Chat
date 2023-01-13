@@ -1,11 +1,11 @@
 CC = gcc
 CFLAGS = -Wall
 
-client: client.c client.h chatInfo.h
-	$(CC) $(CFLAGS) client.c -o client
+client: inf151805_inf151891_k.c inf151805_inf151891_k.h inf151805_inf151891_chatInfo.h
+	$(CC) $(CFLAGS) inf151805_inf151891_k.c -o client
 
-server: server.c server.h chatInfo.h
-	$(CC) $(CFLAGS) server.c -o server
+server: inf151805_inf151891_s.c inf151805_inf151891_s.h inf151805_inf151891_chatInfo.h
+	$(CC) $(CFLAGS) inf151805_inf151891_s.c -o server
 
 all: server client
 

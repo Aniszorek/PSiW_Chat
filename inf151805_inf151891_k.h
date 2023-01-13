@@ -1,4 +1,4 @@
-#include "chatInfo.h"
+#include "inf151805_inf151891_chatInfo.h"
 
 
 int logIn(int msgId,int ppid);

@@ -16,20 +16,20 @@ Instrukcja uruchomienia:
 userConfig.txt - zawiera nazwy i hasła użytkowników, a także nazwy wszystkich
     grup
 
-client.c - zawiera wszystkie funkcje ważne po stronie klienta.
+inf151805_inf151891_k.c - plik klienta, zawiera wszystkie funkcje ważne po stronie klienta.
     W tym między innymi funkcję do logowania i wylogowywania użytkownika,
     dołączania go do grupy, wysyłania wiadomości do użytkowników
     lub grup, blokowanie użytkowników i grup, a także współbieżne
     odbieranie wiadomości.
 
-server.c - zawiera wszystkie funkcje ważne po stronie servera.
+inf151805_inf151891_s.c - plik serwera, zawiera wszystkie funkcje ważne po stronie servera.
     W tym między innymi funkcje, które umożliwiają wykonanie czynności
     zlecanych przez użytkownika - tych wymienionych w powyższym punkcie.
     Zawiera także strukturę użytkownika i grupy.
 
-client.h, server.h - definicje poszczególnych funkcji używanych w konkretnych 
+inf151805_inf151891_k.h,inf151805_inf151891_s.h - definicje poszczególnych funkcji używanych w konkretnych 
     procesach, zdefiniowane wartości stałe przydatne w programie.
     
-chatInfo.h - wszystkie dołączone biblioteki, zdefiniowane stałe używane
+inf151805_inf151891_chatInfo.h - wszystkie dołączone biblioteki, zdefiniowane stałe używane
     w obydwu programach (client.c i server.c), struktura przekazywanej
     wiadomości.
