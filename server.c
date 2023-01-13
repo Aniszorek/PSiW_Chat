@@ -753,7 +753,7 @@ void sendGroupMessage()
 		if(msgSndStatus!=-1)
 			printf("(GroupMessage) Error message %d sent to %s\n",GROUP_NOT_EXISTS,username);
 		else
-			printf("(GroupMessage) Error message $d not sent to %s. Error\n",GROUP_NOT_EXISTS,username);
+			printf("(GroupMessage) Error message %d not sent to %s. Error\n",GROUP_NOT_EXISTS,username);
 
 		return;
 	 }
@@ -969,7 +969,7 @@ void muteUser()
 	 if(msgSndStatus!=-1)
 	 		printf("(MuteUser) Confirmation sent to %s\n",users[userindex].name);
 	 else
-			printf("(MuteUser) Confirmation not sent to $s. Error\n",users[userindex].name);
+			printf("(MuteUser) Confirmation not sent to %s. Error\n",users[userindex].name);
 }
 
 
@@ -1021,9 +1021,9 @@ void unmuteUser()
             msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
             if(msgSndStatus!=-1)
-                printf("(UnmuteUser) Error message %d sent to $s\n",USER_NOT_EXISTS,users[userindex].name);
+                printf("(UnmuteUser) Error message %d sent to %s\n",USER_NOT_EXISTS,users[userindex].name);
             else
-                printf("(UnmuteUser) Error message %d not sent to $s. Error\n",USER_NOT_EXISTS,users[userindex].name);
+                printf("(UnmuteUser) Error message %d not sent to %s. Error\n",USER_NOT_EXISTS,users[userindex].name);
             return;
      }
 
@@ -1037,9 +1037,9 @@ void unmuteUser()
          msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
             if(msgSndStatus!=-1)
-                printf("(UnmuteUser) Error message %d sent to $s\n",MUTE_SELF_ERROR,users[userindex].name);
+                printf("(UnmuteUser) Error message %d sent to %s\n",MUTE_SELF_ERROR,users[userindex].name);
             else
-                printf("(UnmuteUser) Error message %d not sent to $s. Error\n",MUTE_SELF_ERROR,users[userindex].name);
+                printf("(UnmuteUser) Error message %d not sent to %s. Error\n",MUTE_SELF_ERROR,users[userindex].name);
          return;
      }
 
@@ -1053,9 +1053,9 @@ void unmuteUser()
          msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 
             if(msgSndStatus!=-1)
-                printf("(UnmuteUser) Error message %d sent to $s\n",USER_MUTED_ALREADY,users[userindex].name);
+                printf("(UnmuteUser) Error message %d sent to %s\n",USER_MUTED_ALREADY,users[userindex].name);
             else
-                printf("(UnmuteUser) Error message %d not sent to $s. Error\n",USER_MUTED_ALREADY,users[userindex].name);
+                printf("(UnmuteUser) Error message %d not sent to %s. Error\n",USER_MUTED_ALREADY,users[userindex].name);
          return;
      }
 
