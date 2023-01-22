@@ -43,7 +43,9 @@
 	\maketitle
 	\section{Komunikacja między serwerem i klientem}
 	\subsection{Wstęp}
-	Cały komunikacja opiera się wyłącznie na jednej kolejce komunikatów IPC. Klucz jest stałą dostępną dla wszystkich programów. Serwer oczekuje na jakiekolwiek wiadomości, natomiast wysyłając komunikaty do użytkownika, przypisuje do typu konkretne ID użytkownika - czyli PID procesu. Użytkownik odbiera wiadomości oczekując na wiadomość z jego ID.
+	Cały komunikacja opiera się wyłącznie na jednej kolejce komunikatów IPC. Klucz jest stałą dostępną dla wszystkich programów. Serwer oczekuje na jakiekolwiek wiadomości, natomiast wysyłając komunikaty do użytkownika, przypisuje do typu konkretne ID użytkownika - czyli PID procesu. Użytkownik odbiera wiadomości oczekując na wiadomość z jego ID.\\
+	Serwer przechowuje również PID procesu potomnego użytkownika, który jest odpowiedzialny za odbiór wiadomości od innych użytkowników. Wykorzystanie współbieżności jest uzasadnione tym, że program klienta musi cały czas oczekiwać na przychodzące wiadomości wysłane przez innych użytkowników, a w przypadku zapytań bezpośrednich do serwera robi to tylko w momencie wysłania zapytania. 
+	
 	\subsection{Polecenia}
 	Przy włączeniu programu, jedyne co może zrobić użytkownik to wprowadzenie nazwy użytkownika i hasła w celu zalogowania się. Komendy z których mogą korzystać użytkownicy, dostępne są dopiero po zalogowaniu się na konto. W celu ich wyświetlenia można użyć komendy: "!help"\\
 	Wykonanie każdego polecenia wymaga rozróżnienia tych poleceń przez serwer, dlatego każde żądanie ze strony użytkownika jest wysyłane z konkretnym typem, dla każdego z poleceń.\\\\ Komendy razem z funkcjonalnością i typem:
@@ -71,7 +73,32 @@
 \end{table}
 \pagebreak
 	\subsection{Komunikacja}
-	Struktura przekazywanych komunikatów jest następująca:
+	Serwer przechowuje dane o użytkownikach i grupach w następujących strukturach:
+		\begin{lstlisting}[style = CStyle]
+			struct User{
+				char name[USERNAME_SIZE];
+				char password[PASSWORD_SIZE];
+				int id;
+				int sendId;
+				int isLogin;
+				short incorrectLoginAttempts;
+				
+				char mutedUsersList[NUM_OF_USERS][USERNAME_SIZE];
+				char mutedGroupsList[NUM_OF_GROUPS][GROUPNAME_SIZE];
+			};
+		
+			struct Group{
+				char name[GROUPNAME_SIZE];
+				short usersInGroup;
+				struct User *users[NUM_OF_USERS];
+			};
+		\end{lstlisting}
+	Gdzie:\\
+	\textbf{id} – identyfikator użytkownika na serwerze (PID), wykorzystywany również do komunikacji serwera z użytkownikiem (adresat -> serwer -> adresat)\\
+	\textbf{sendId} – PID procesu potomnego, wykorzystywany w komunikacji adresat -> serwer -> odbiorca/grupa\\
+	\textbf{usersInGroup} – aktualna liczba osób w grupie\\\\
+	
+	\noindent Struktura przekazywanych komunikatów jest następująca:
 		\begin{lstlisting}[style = CStyle]
 		struct msgbuf{
 			long type;
@@ -101,17 +128,31 @@
 	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer po otrzymaniu wiadomości, wyszukuje podaną grupę - odsyłając błąd jeśli nie istnieje. Następnie sprawdza czy użytkownik znajduje się w tej grupie, po czym go z niej usuwa. Serwer odsyła zaistniały błąd lub potwierdzenie usunięcia użytkownika z grupy.\\
 	\textbf{Wymagane: long type, int senderId (PID), char message[1024]}
 	\subsubsection{Wysyłanie wiadomości}
-	\textbf{Wymagane:}
+	Do serwera zostaje wysłana informacja z ID użytkownika - adresata, typem zapytania oraz wiadomość w formacie: nazwa\_odbiorcy;treść. Serwer przetwarza otrzymaną wiadomość i gdy nie zostanie wykryty żaden błąd, przekazuje jej treść do odbiorcy - wiadomość ta jest odbierana przez proces potomny odbiorcy. W przypadku niepowodzenia adresat otrzymuje odpowiedni komunikat z treścią błędu, w przeciwnym przypadku otrzymuje potwierdzenie wysłania wiadomości.\\
+	Możliwe błędy: próba wysyłania wiadomości do nieistniejącego użytkownika, użytkownik nie jest zalogowany, adresat jest zablokowany przez odbiorcę, próba wysłania wiadomości do samego siebie.\\
+	\textbf{Wymagane: long type, int senderID, char message[1024]}
 	\subsubsection{Wysyłanie wiadomości do grupy}
-	\textbf{Wymagane:}
+	Do serwera zostaje wysłana informacja z ID użytkownika - adresata, typem zapytania oraz wiadomość w formacie: nazwa\_grupy;treść. Serwer przetwarza otrzymaną wiadomość i gdy nie zostanie wykryty żaden błąd, przekazuje jej treść do zalogowanych użytkowników w danej grupie. Wiadomość ta jest odbierana przez procesy potomne odbiorców.  W przypadku niepowodzenia adresat otrzymuje odpowiedni komunikat z treścią błędu, w przeciwnym przypadku otrzymuje potwierdzenie wysłania wiadomości.\\
+	Możliwe błędy: próba wysyłania wiadomości do nieistniejącej grupy.\\
+	\textbf{Wymagane: long type, int senderID, char message[1024]}
 	\subsubsection{Blokowanie użytkownika}
-	\textbf{Wymagane:}
+	Do serwera zostaje wysłana informacja z ID użytkownika - adresata, typem zapytania oraz wiadomość w formacie: nazwa\_użytkownika. Serwer przechowuje informację o zablokowaniu użytkownika przez adresata. W przypadku niepowodzenia zablokowania adresat otrzymuje komunikat o błędzie, w przeciwnym przypadku otrzymuje potwierdzenie zablokowania.\\
+	Możliwe błędy: próba zablokowania nieistniejącego użytkownika, użytkownik jest już zablokowany, próba zablokowania samego siebie.\\
+	Gdy zablokowany użytkownik podejmie próbę wysłania wiadomości - otrzyma odpowiedni komunikat o błędzie. \\
+	\textbf{Wymagane:long type, int senderID, char message[1024]}
 	\subsubsection{Odblokowanie użytkownika}
-	\textbf{Wymagane:}
+	Do serwera zostaje wysłana informacja z ID użytkownika - adresata, typem zapytania oraz wiadomość w formacie: nazwa\_użytkownika. Serwer usuwa informację o zablokowaniu użytkownika i przywraca możliwość komunikacji zablokowanemu użytkownikowi z adresatem. W przypadku niepowodzenia adresat otrzymuje komunikat o błędzie, w przeciwnym przypadku otrzymuje potwierdzenie odblokowania.\\
+	Możliwe błędy: próba odblokowania nieistniejącego użytkownika, próba odblokowania użytkownika, który nie był zablokowany, próba odblokowania samego siebie.\\
+	\textbf{Wymagane:long type, int senderID, char message[1024] }
 	\subsubsection{Blokowanie grupy}
-	\textbf{Wymagane:}
+	Do serwera zostaje wysłana informacja z ID użytkownika - adresata, typem zapytania oraz w wiadomość w formacie: nazwa\_grupy. Serwer przechowuje informacje o zablokowaniu grupy przez adresata. W przypadku niepowodzenia zablokowania adresat otrzymuje komunikat o błędzie, w przeciwnym przypadku otrzymuje potwierdzenie zablokowania.\\
+	Możliwe błędy: próba zablokowania nieistniejącej grupy, grupa jest już zablokowana.\\
+	W przypadku wysłania wiadomości do zablokowanej grupy, adresat zostanie zignorowany i wiadomość nie zostanie mu dostarczona.\\
+	\textbf{Wymagane:long type, int senderID, char message[1024]}
 	\subsubsection{Odblokowanie grupy}
-	\textbf{Wymagane:}
+	Do serwera zostaje wysłana informacja z ID użytkownika - adresata, typem zapytania oraz wiadomość w formacie: nazwa\_grupy. Serwer usuwa informację o zablokowaniu grupy przez adresata. W przypadku niepowodzenia adresat otrzymuje komunikat o błędzie, w przeciwnym przypadku otrzymuje potwierdzenie odblokowania.\\
+	Możliwe błędy: próba odblokowania nieistniejącej grupy, próba odblokowania grupy, która nie była zablokowana\\
+	\textbf{Wymagane: long type, int senderID, char message[1024]}
 	\subsubsection{Wylogowanie użytkownika}
 	Do serwera przesyłana zostaje informacja z ID użytkownika, typem zapytania i nazwą grupy. Serwer usuwa użytkownika z aktywnych użytkowników i wysyła potwierdzenie wykonania żądania.\\
 	\textbf{Wymagane: long type, int senderId (PID)}
