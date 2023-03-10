@@ -256,6 +256,9 @@ void loadUsersData(){
     for (int i = 0; i < NUM_OF_GROUPS; i++){
         fscanf(file, "%s", groups[i].name);
         groups[i].usersInGroup = 0;
+        for (int j = 0; j < NUM_OF_USERS; j++){
+            groups[i].users[j] = NULL;
+        }
         printf("%d. %s loaded\n", i, groups[i].name);
     }
     fclose(file);
@@ -490,6 +493,7 @@ void sendGroupUsers(){
         send.error = GROUP_USERS_CONFIRMATION_TYPE;
         strcpy(send.message, "");
         for(int i = 0; i<usersInGroup; i++){
+            //printf("%s", groups[groupIndex].users[i]->name);
             strcat(send.message, groups[groupIndex].users[i]->name);
             strcat(send.message, ";");
         }
@@ -498,6 +502,8 @@ void sendGroupUsers(){
                             users[userIndex].name,
                             groups[groupIndex].name);
     }
+
+    int msgSndStatus = msgsnd(msgId, &send, MESSAGE_SIZE, 0);
 }
 
  void sendDirectMessage()

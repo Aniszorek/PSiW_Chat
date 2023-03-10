@@ -305,6 +305,7 @@ void requestGroupUsers(char groupName[MESSAGE_SIZE]){
     msgsnd(msgId, &send, MESSAGE_SIZE, 0);
     msgrcv(msgId, &receive, MESSAGE_SIZE,id,0);
 
+
     if(receive.error == GROUP_USERS_CONFIRMATION_TYPE)
         printReceivedList("Users in the group: ");
     else
